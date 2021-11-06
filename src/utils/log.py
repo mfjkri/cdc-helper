@@ -7,7 +7,7 @@ formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
 class Log:
 
     def __init__(self, dir, name):
-        log = logging.getLogger('cdc_helper')
+        log = logging.getLogger(name)
         log.setLevel(logging.INFO)
         
         terminal_output = logging.StreamHandler(sys.stdout)
