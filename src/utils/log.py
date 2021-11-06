@@ -11,7 +11,7 @@ log_config = {
 
 class Log:
 
-    def __init__(self, directory, name = "cdc-helper", log_config = log_config):
+    def __init__(self, directory, name="cdc-helper", log_config=log_config):
         log = logging.getLogger(name)
         log.setLevel(logging.INFO)
 
