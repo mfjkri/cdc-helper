@@ -1,19 +1,18 @@
 import traceback, time
 from twocaptcha import TwoCaptcha
 
-is_enabled = True
-
 class Captcha:
-    def __init__(self, api_key, log):
+    def __init__(self, api_key, log, is_enabled):
         solver = TwoCaptcha(apiKey=api_key)
         self.solver = solver
         self.log = log
+        self.enabled = is_enabled
         
     def solve(self, driver, page_url = None):
         t_start = time.perf_counter()
         page_url = page_url or driver.current_url
         
-        if is_enabled:
+        if self.enabled:
             self.log.info('Solving CAPTCHA for: ' + page_url)
             site_key_element = driver.find_element_by_css_selector('[data-sitekey]')
             site_key = site_key_element.get_attribute("data-sitekey")
