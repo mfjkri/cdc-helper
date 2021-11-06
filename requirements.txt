@@ -1,0 +1,3 @@
+selenium 
+pyyaml 
+2captcha-python
