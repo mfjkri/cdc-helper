@@ -68,5 +68,8 @@ class Log:
     def error(self, msg):
         self.logger.error(msg)
         
+    def warning(self, msg):
+        self.logger.warning(msg)
+        
     def debug(self, msg):
         self.logger.debug(msg)
