@@ -27,8 +27,7 @@ class Captcha:
                 return False
             else:
                 driver.execute_script("""document.querySelector('[name="g-recaptcha-response"]').innerText='{}'""".format(str(result['code'])))
-                self.log.info('Executed captcha script! + ' + str(result))
-                self.log.info("Took exactly {t} seconds to solve the reCaptcha using two-captcha!".format(t = time.perf_counter() - t_start))
+                self.log.info("Took {t} seconds to solve the reCaptcha using two-captcha!".format(t = time.perf_counter() - t_start))
                 return True
         else:
             self.log.info('Manually solving CAPTCHA for: ' + page_url)
