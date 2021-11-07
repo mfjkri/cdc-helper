@@ -4,7 +4,7 @@ from twocaptcha import TwoCaptcha
 from utils.log import Log
 from selenium import webdriver
 
-class Captcha:
+class TwoCaptcha:
     def __init__(self, api_key:str, log:Log, is_enabled:bool=False, debug_enabled:bool=False):
         solver = TwoCaptcha(apiKey=api_key)
         self.solver = solver
