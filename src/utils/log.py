@@ -1,5 +1,5 @@
 import os, shutil, sys, logging
-from datetime import datetime 
+from datetime import datetime
 
 from utils.common import common
 
@@ -15,7 +15,7 @@ DEFAULT_CONFIG = {
 
 class Log:
 
-    def __init__(self, directory, name="cdc-helper", config=DEFAULT_CONFIG):
+    def __init__(self, directory:str, name:str="cdc-helper", config:dict=DEFAULT_CONFIG):
         log = logging.getLogger(name)
         log.setLevel(logging.INFO)
 
@@ -43,7 +43,7 @@ class Log:
                 config[configType] = configValue
         return config
                     
-    def clean(self, exceptFileName=""):
+    def clean(self, exceptFileName:str=""):
         for filename in os.listdir(self.directory):
             if filename != exceptFileName:
                 file_path = os.path.join(self.directory, filename)
@@ -54,8 +54,17 @@ class Log:
                         shutil.rmtree(file_path)
                 except Exception as e:
                     self.error('Failed to delete %s. Reason: %s' % (file_path, e))   
+    
+    def _concatenate(self, ouput_tuple):
+        result = ""
+        for m in ouput_tuple:
+            result += str(m) + ' '
         
-    def info(self, msg):
+        return result
+        
+    def info(self, *output):
+        msg = self._concatenate(output)
+                
         if self.config["SHOW_STACK"]:
             caller_info = self.logger.findCaller()
             
@@ -65,11 +74,11 @@ class Log:
         else:
             self.logger.info(msg)
             
-    def error(self, msg):
-        self.logger.error(msg)
+    def error(self, *output):
+        self.logger.error(self._concatenate(output))
         
-    def warning(self, msg):
-        self.logger.warning(msg)
+    def warning(self, *output):
+        self.logger.warning(self._concatenate(output))
         
-    def debug(self, msg):
-        self.logger.debug(msg)
+    def debug(self, *output):
+        self.logger.debug(self._concatenate(output))
