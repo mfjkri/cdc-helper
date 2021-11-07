@@ -5,11 +5,11 @@ class selenium_common:
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions as EC
     
-    def wait_for_elem(driver: selenium.webdriver, locator_type: str, locator: str, timeout: int):
+    def wait_for_elem(driver: selenium.webdriver, locator_type: str, locator: str, timeout: int=5):
         return selenium_common.WebDriverWait(driver, timeout).until(selenium_common.EC.presence_of_element_located((locator_type, locator)))
 
 
-    def is_elem_present(driver: selenium.webdriver, locator_type: str, locator: str, timeout: int):
+    def is_elem_present(driver: selenium.webdriver, locator_type: str, locator: str, timeout: int=2):
         try:
             return selenium_common.wait_for_elem(driver, locator_type, locator, timeout)
         except selenium_common.TimeoutException:
