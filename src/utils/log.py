@@ -24,7 +24,7 @@ class Log:
         self.logger = log  
         self.name = name
         self.directory = directory 
-        self.config = self._init_config(config)
+        self.config = utils.init_config_with_default(config, DEFAULT_CONFIG)
 
         if self.config["CLEAR_OUTPUT_ON_RESET"]:
             utils.clear_directory(directory=self.directory, log=self.logger)
@@ -40,12 +40,6 @@ class Log:
             log.addHandler(file_output)
 
         log.setLevel(int(self.config["LOG_LEVEL"]) * 10)
-        
-    def _init_config(self, config):
-        for configValue, configType in enumerate(DEFAULT_CONFIG):
-            if not utils.check_key_existence_in_dict(config, configType):
-                config[configType] = configValue
-        return config
         
     def info(self, *output):
         msg = utils.concat_tuple(output)
