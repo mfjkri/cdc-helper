@@ -33,13 +33,13 @@ class Captcha:
                 self._debug_wrapper(debug_enabled=self.debug_enabled, debug_type=self.log.debug, message="Solved CAPTCHA!")
             except TimeoutException as e:
                 self._debug_wrapper(debug_enabled=self.debug_enabled, debug_type=self.log.debug, message="2Captcha API has timed-out!")
-                result = (False, "TIMEOUT: " + str(e))
+                result = (False, f"TIMEOUT: {str(e)}")
             except NetworkException as e:
                 self._debug_wrapper(debug_enabled=self.debug_enabled, debug_type=self.log.debug, message="2Captcha API has encountered as a network error!")
-                result = (False, "NETWORK_ERROR: " + str(e))
+                result = (False, f"NETWORK_ERROR: {str(e)}")
             except ApiException as e:
                 self._debug_wrapper(debug_enabled=self.debug_enabled, debug_type=self.log.debug, message="2Captcha API has encountered an API error!")
-                result = (False, "API_ERROR " + str(e))
+                result = (False, f"API_ERROR: {str(e)}")
             except Exception as e:
                 self.log.error(e)
                 self.log.error(traceback.format_exc())
@@ -47,7 +47,7 @@ class Captcha:
             else:
                 driver.execute_script("""document.querySelector('[name="g-recaptcha-response"]').innerText='{}'""".format(str(result["code"])))
                 self._debug_wrapper(debug_enabled=self.debug_enabled, debug_type=self.log.debug, message="Took {t} seconds to solve the reCaptcha using two-captcha!".format(t = time.perf_counter() - t_start))
-                result = (True, "SOLVED: " + str(result))
+                result = (True, "SOLVED: {str(result)}")
             finally:
                 return result
         else:
