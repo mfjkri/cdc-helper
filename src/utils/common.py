@@ -1,4 +1,4 @@
-import shutil, os
+import shutil, os, yaml
 
 class selenium_common:
     import selenium
@@ -18,15 +18,33 @@ class selenium_common:
 
 class utils:
     
+    
     class DEFAULT_LOG:
         def info(*args):
             print("[INFO]", utils.concat_tuple(args))
+        def debug(*args):
+            print("[DEBUG]", utils.concat_tuple(args))
         def error(*args):
             print("[ERROR]", utils.concat_tuple(args))
         def warn(*args):
             print("[WARN]", utils.concat_tuple(args))
-        def debug(*args):
-            print("[DEBUG]", utils.concat_tuple(args))
+
+    def load_config_from_yaml_file(file_path:str, log):
+        if not os.path.isfile(file_path):
+            raise Exception(f"No file found at {file_path}")
+        with open(file_path, 'r') as stream:
+            config = {}
+            try:
+                config = yaml.safe_load(stream)
+            except yaml.YAMLError as exception:
+                log.error(exception)
+            return config
+    
+    def init_config_with_default(config:dict, default_config:dict):
+        for configValue, configType in enumerate(default_config):
+            if not utils.check_key_existence_in_dict(config, configType):
+                config[configType] = configValue
+        return config
     
     def check_key_value_pair_exist_in_dict(dic, key, value):
         try:
