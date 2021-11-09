@@ -53,11 +53,31 @@ class Log:
         else:
             self.logger.info(msg)
             
+    def debug(self, *output):
+        self.logger.debug(utils.concat_tuple(output))
+            
     def error(self, *output):
         self.logger.error(utils.concat_tuple(output))
         
     def warning(self, *output):
         self.logger.warning(utils.concat_tuple(output))
         
-    def debug(self, *output):
-        self.logger.debug(utils.concat_tuple(output))
+        
+    
+    
+    def info_if(self, condition:bool, *output):
+        if condition:
+            self.info(*output)
+            
+    def debug_if(self, condition:bool, *output):
+        if condition:
+            self.debug(*output)
+
+    def error_if(self, condition:bool, *output):
+        if condition:
+            self.error(*output)
+        
+    def warning_if(self, condition:bool, *output):
+        if condition:
+            self.warning(*output)
+    
