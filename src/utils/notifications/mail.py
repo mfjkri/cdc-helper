@@ -28,7 +28,7 @@ class Mail:
         self.sender = smtp_username
         self.default_recipient = self.sender
         
-    def send(self, mail_subject:str, mail_body, receiver:str=None):
+    def send_mail(self, mail_subject:str, mail_body, receiver:str=None):
         try:
             msg = EmailMessage()
             msg.set_content(mail_body)
