@@ -43,18 +43,19 @@ class Captcha:
             except Exception as e:
                 self.log.error(e)
                 self.log.error(traceback.format_exc())
-                return False
+                result = (False, f"UNKNOWN_ERROR : {str(e)}")
             else:
                 driver.execute_script("""document.querySelector('[name="g-recaptcha-response"]').innerText='{}'""".format(str(result["code"])))
                 self._debug_wrapper(debug_enabled=self.debug_enabled, debug_type=self.log.debug, message="Took {t} seconds to solve the reCaptcha using two-captcha!".format(t = time.perf_counter() - t_start))
                 result = (True, f"SOLVED: {str(result)}")
             finally:
+                self.log.debug("t", result)
                 return result
         else:
             self._debug_wrapper(debug_enabled=self.debug_enabled, debug_type=self.log.debug, message="Manually solving  CAPTCHA for: " + page_url)
             input("Press enter to proceed: ")
             self._debug_wrapper(debug_enabled=self.debug_enabled, debug_type=self.log.debug, message="Took exactly {t} seconds to solve the reCaptcha manually!".format(t = time.perf_counter() - t_start))
-            return True
+            return (True, "Manually solved CAPTCHA")
         
         
             
