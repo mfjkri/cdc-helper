@@ -47,7 +47,7 @@ class Captcha:
             else:
                 driver.execute_script("""document.querySelector('[name="g-recaptcha-response"]').innerText='{}'""".format(str(result["code"])))
                 self._debug_wrapper(debug_enabled=self.debug_enabled, debug_type=self.log.debug, message="Took {t} seconds to solve the reCaptcha using two-captcha!".format(t = time.perf_counter() - t_start))
-                result = (True, "SOLVED: {str(result)}")
+                result = (True, f"SOLVED: {str(result)}")
             finally:
                 return result
         else:
