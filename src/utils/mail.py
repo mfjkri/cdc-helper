@@ -2,13 +2,14 @@ import smtplib, socket
 from email.message import EmailMessage 
 
 from utils.common import utils
+from utils.log import Log
 
 class NoMailServer(Exception):
     def __init__(self, error, *args: object) -> None:
         super().__init__(*args)
 
 class Mail:
-    def __init__(self, smtp_server:str, smtp_server_port:int, smtp_username:str, smtp_user_password:str, log=utils.DEFAULT_LOG):
+    def __init__(self, smtp_server:str, smtp_server_port:int, smtp_username:str, smtp_user_password:str, log:Log):
         mail_server = None
         try:
             mail_server = smtplib.SMTP(smtp_server, smtp_server_port)
