@@ -1,9 +1,7 @@
 import time
 
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
-from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
 
@@ -51,6 +49,9 @@ class handler(CDCAbstract):
 
         if sleep_delay:
             time.sleep(sleep_delay)
+            
+    def __str__(self):
+        return super().__str__()
         
     def open_home_page(self, sleep_delay = None):
         self.driver.get(self.home_url)
@@ -93,6 +94,7 @@ class handler(CDCAbstract):
         self._open_index("NewPortal/Booking/StatementBooking.aspx")
         self._open_index("NewPortal/Booking/StatementBooking.aspx")
 
+    #TODO: Update this
     def get_booked_lesson_date_time(self):
         rows = self.driver.find_elements(By.CSS_SELECTOR, "table#ctl00_ContentPlaceHolder1_gvBooked tr")
 
@@ -101,9 +103,9 @@ class handler(CDCAbstract):
         for row in rows:
             td_cells = row.find_elements_by_tag_name("td")
             if len(td_cells) > 0:
-                lesson_name: str = td_cells[4].text
+                lesson_name = td_cells[4].text
                 if "2BL" in lesson_name:
-                    lesson_number: int = int(lesson_name[len(lesson_name) - 1])
+                    lesson_number = int(lesson_name[len(lesson_name) - 1])
                     if lesson_number > latest_booked_practical_lesson_number:
                         latest_booked_practical_lesson_number = lesson_number
 
@@ -118,26 +120,26 @@ class handler(CDCAbstract):
                         continue
                     self.lesson_name_practical = lesson_name
                     self.booked_sessions_practical.update({
-                        td_cells[0].text: f'{td_cells[2].text} - {td_cells[3].text}'})
+                        td_cells[0].text: f"{td_cells[2].text} - {td_cells[3].text}"})
                 if "RTT" in lesson_name:
                     self.lesson_name_rtt = lesson_name
                     self.booked_sessions_rtt.update({
-                        td_cells[0].text: f'{td_cells[2].text} - {td_cells[3].text}'})
+                        td_cells[0].text: f"{td_cells[2].text} - {td_cells[3].text}"})
                 if "BTT" in lesson_name:
                     self.lesson_name_btt = lesson_name
                     self.booked_sessions_btt.update({
-                        td_cells[0].text: f'{td_cells[2].text} - {td_cells[3].text}'})
+                        td_cells[0].text: f"{td_cells[2].text} - {td_cells[3].text}"})
                 if "PT" in lesson_name:
                     self.lesson_name_pt = lesson_name
                     self.booked_sessions_pt.update({
-                        td_cells[0].text: f'{td_cells[2].text} - {td_cells[3].text}'})
+                        td_cells[0].text: f"{td_cells[2].text} - {td_cells[3].text}"})
         
-    def open_theory_test_booking_page(self, type: str):
+    def open_theory_test_booking_page(self, type:str):
         self._open_index("NewPortal/Booking/BookingTT.aspx")
         self._open_index("NewPortal/Booking/BookingTT.aspx", sleep_delay=2)
 
         if "Alert.aspx" in self.driver.current_url:
-            # "You do not have access to this facility."
+            self.log.info("You do not have access to Booking TT.")
             return False
 
         # now agree to terms and conditions
@@ -162,10 +164,10 @@ class handler(CDCAbstract):
     
     def open_practical_test_booking_page(self):
         self._open_index("NewPortal/Booking/BookingPT.aspx")
-        self._open_index("NewPortal/Booking/BookingPT.aspx")
+        self._open_index("NewPortal/Booking/BookingPT.aspx", sleep_delay=2)
 
         if "Alert.aspx" in self.driver.current_url:
-            # "You do not have access to this facility."
+            self.log.info("You do not have access to Booking PT.")
             return False
 
         try:
@@ -186,100 +188,104 @@ class handler(CDCAbstract):
             pass
         return True
     
-    def open_practical_lessons_booking(self, type=Types.PRACTICAL):
+    def open_practical_lessons_booking(self, type:str=Types.PRACTICAL):
         self._open_index("NewPortal/Booking/BookingPL.aspx")
         self._open_index("NewPortal/Booking/BookingPL.aspx", sleep_delay=5)
 
-        select = Select(self.driver.find_element(By.ID, "ctl00_ContentPlaceHolder1_ddlCourse"))
-
+        course_selection = Select(self.driver.find_element(By.ID, "ctl00_ContentPlaceHolder1_ddlCourse"))
+        number_of_options = len(course_selection.options)
+        
         # sometimes there are multiple options (like "CLASS 2B CIRCUIT REVISION" and "Class 2B Lesson 5")
         # in that case, choose the "Class 2B Lesson *" as this is much more relevant to be notified for
-        select_indx = 1
-        avail_options = []
-        if len(select.options) > 1:
-            for i, option in enumerate(select.options):
-                # skip first option ("Select")
-                if i == 0:
-                    continue
-                avail_options.append(option.text.strip())
-                if "Class 2B Lesson" in option.text:
-                    select_indx = i
-        if len(select.options) > 2:
-            self.log.info(f"There are two options ({avail_options}) available. Choosing the practical lesson ({select.options[select_indx].text.strip()}).")
+        selection_idx = 1
+        avail_options = ["-"]
         
-        if len(avail_options) > 0:
-            self.lesson_name_practical = avail_options[select_indx - 1]
-            select.select_by_index(select_indx)
+        if number_of_options > 1:
+            for option_index in range(1, number_of_options):
+                option = course_selection.options[option_index]
+                avail_options.append(str(option.text.strip()))
+                
+                if "Class 2B Lesson" in option.text:
+                    selection_idx = option_index
 
-            WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(
-                (By.ID, 'ctl00_ContentPlaceHolder1_lblSessionNo')))
-            return True
+            if number_of_options > 2:
+                self.log.info(f"There are multiple options ({avail_options}) available. Choosing: {avail_options[selection_idx]}.")
         else:
             self.log.info("No available course found for booking of practical lessons!")
+            return False
+        
+        self.lesson_name_practical = avail_options[selection_idx]
+        course_selection.select_by_index(selection_idx)
+
+        WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.ID, 'ctl00_ContentPlaceHolder1_lblSessionNo')))
+        return True
     
+    #TODO: Update this
     # finds all available days and time slots (without knowing which slots are free or not)
-    def get_all_session_date_times(self, type: str):
+    def get_all_session_date_times(self, type:str):
         for row in self.driver.find_elements(By.CSS_SELECTOR, "table#ctl00_ContentPlaceHolder1_gvLatestav tr"):
             th_cells = row.find_elements_by_tag_name("th")
             
-            supported_type = type == Types.PRACTICAL or type == Types.BTT or type == Types.RTT or type == Types.PT or False
-            selected_times_table =  ((type == Types.PRACTICAL and self.available_times_practical) or 
+            selected_times_array =  ((type == Types.PRACTICAL and self.available_times_practical) or 
                                      (type == Types.BTT and self.available_times_btt) or 
                                      (type == Types.RTT and self.available_times_rtt) or 
-                                     (type == Types.PT and self.available_times_pt) or None) 
+                                     (type == Types.PT and self.available_times_pt)) 
                                     
             for i, th_cell in enumerate(th_cells):
                 if i < 2:
                     continue
-                if supported_type and selected_times_table:
-                    selected_times_table.append(str(th_cell.text).split("\n")[1])
+                selected_times_array.append(str(th_cell.text).split("\n")[1])
 
             td_cells = row.find_elements_by_tag_name("td")
             if len(td_cells) > 0:
-                if supported_type and selected_times_table:
-                    selected_times_table.append(td_cells[0].text)
+                selected_times_array.append(td_cells[0].text)
                 continue
-
-    def get_all_available_sessions(self, type: str):
+    
+    #TODO: Update this
+    def get_all_available_sessions(self, type:str):
         # iterate over all "available motorcycle" images to get column and row
         # to later on get the date & time of that session
         input_elements = self.driver.find_elements(By.TAG_NAME, "input")
-        last_practical_input_element: WebElement = None
+        last_practical_input_element = None
         has_booked_lessons = False
         has_booked_lessons_in_view = False
+        
         for input_element in input_elements:
             # Images1.gif -> available slot
             input_element_src = input_element.get_attribute("src")
             if "Images1.gif" in input_element_src or "Images3.gif" in input_element_src:
                 # e.g. ctl00_ContentPlaceHolder1_gvLatestav_ctl02_btnSession4 (02 is row, 4 is column)
                 element_id = str(input_element.get_attribute("id"))
-                # remove 2 to remove th row (for mapping to available_days)
-                row = int(element_id.split('_')[3][-1:]) - 2
-                # remove 1 to remove first column (for mapping to available_times)
-                column = int(element_id[-1]) - 1
-                if "Images1.gif" in input_element_src:
-                    available_sessions = {}
-                    available_days = {}
-                    available_times = {}
+                row = int(element_id.split('_')[3][-1:]) - 2 # -2 to remove th row (for mapping to available_days)
+                column = int(element_id[-1]) - 1 # -1 to remove first column (for mapping to available_times)
 
-                    # get the input values depending on the type to avoid redundant code
-                    if type == Types.PRACTICAL:
-                        available_sessions = self.available_sessions_practical
-                        available_days = self.available_days_practical
-                        available_times = self.available_times_practical
-                        last_practical_input_element = input_element
-                    elif type == Types.BTT:
-                        available_sessions = self.available_sessions_btt
-                        available_days = self.available_days_btt
-                        available_times = self.available_times_btt
-                    elif type == Types.RTT:
-                        available_sessions = self.available_sessions_rtt
-                        available_days = self.available_days_rtt
-                        available_times = self.available_times_rtt
-                    elif type == Types.PT:
-                        available_sessions = self.available_sessions_pt
-                        available_days = self.available_days_pt
-                        available_times = self.available_times_pt
+                if "Images1.gif" in input_element_src:
+
+                    available_sessions = (
+                        (type == Types.PRACTICAL and self.available_sessions_practical) or 
+                        (type == Types.BTT and self.available_sessions_btt) or 
+                        (type == Types.RTT and self.available_sessions_rtt) or 
+                        (type == Types.PT and self.available_sessions_pt) or {}
+                    )
+                    
+                    available_days = (
+                        (type == Types.PRACTICAL and self.available_days_practical) or 
+                        (type == Types.BTT and self.available_days_btt) or 
+                        (type == Types.RTT and self.available_days_rtt) or 
+                        (type == Types.PT and self.available_days_pt) or {}
+                    )
+                    
+                    available_times = (
+                        (type == Types.PRACTICAL and self.available_times_practical) or 
+                        (type == Types.BTT and self.available_times_btt) or 
+                        (type == Types.RTT and self.available_times_rtt) or 
+                        (type == Types.PT and self.available_times_pt) or {}
+                    )
+                    
+                    last_practical_input_element = (
+                        type == Types.PRACTICAL and input_element or last_practical_input_element
+                    )
+                    
 
                     # create or append to list of times (in case there are multiple sessions per day)
                     # row is date, column is time
