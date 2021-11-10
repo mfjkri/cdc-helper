@@ -29,6 +29,7 @@ class Mail:
         self.default_recipient = self.sender
         
     def send_mail(self, mail_subject:str, mail_body, receiver:str=None):
+        mail_success = False
         try:
             msg = EmailMessage()
             msg.set_content(mail_body)
@@ -50,6 +51,10 @@ class Mail:
             self.log.error("Socket issue while sending email - Are you in VPN/proxy?")
         except Exception as e:
             self.log.error(f"Something went wrong while sending an email: {e}")
+        else:
+            mail_success = True
+        finally:
+            return mail_success
     
     
     def set_default_recipient(self, recipient:str):
