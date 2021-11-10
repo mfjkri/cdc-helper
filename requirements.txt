@@ -7,7 +7,7 @@ python-telegram-bot
 #two_captcha.py
 2captcha-python
 
-#Used by captcha_bypas.py
+#captcha_bypas.py
 SpeechRecognition
 requests
 selenium
