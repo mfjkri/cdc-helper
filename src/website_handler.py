@@ -42,7 +42,8 @@ class handler(CDCAbstract):
         return self
     
     def __exit__(self, *args):
-        self.driver.close()
+        #self.driver.close()
+        pass
         
     def _open_index(self, path: str, sleep_delay = None):
         self.driver.get(f"{self.booking_url}/{path}")
@@ -73,18 +74,17 @@ class handler(CDCAbstract):
         password_input.send_keys(self.password)
 
         # wait for user to solve recaptcha
-        success, status_msg = self.captcha_solver.solve(driver=self.driver)
-        self.log.debug(success, status_msg)
-        
-        login_btn = selenium_common.wait_for_elem(self.driver, By.ID, "BTNSERVICE2")
-        login_btn.click()
-        
-        WebDriverWait(self.driver, 5).until(EC.alert_is_present())
-        alert = self.driver.switch_to.alert
-        if alert:
-            alert.accept()
+        success, status_msg = self.captcha_solver.solve(driver=self.driver, captcha_type="recaptcha_v2")
+        if success:
+            login_btn = selenium_common.wait_for_elem(self.driver, By.ID, "BTNSERVICE2")
+            login_btn.click()
             
-        self.log.info("Logged in successfully!")
+            alert_dismissed = selenium_common.dismiss_alert(driver=self.driver, timeout=5)    
+            if alert_dismissed:
+                self.log.info("Logged in successfully!")
+            return alert_dismissed
+        return False
+        
         
     def account_logout(self):
         self._open_index("NewPortal/logOut.aspx?PageName=Logout")
@@ -134,30 +134,42 @@ class handler(CDCAbstract):
                     self.booked_sessions_pt.update({
                         td_cells[0].text: f"{td_cells[2].text} - {td_cells[3].text}"})
         
-    def open_theory_test_booking_page(self, type:str):
-        self._open_index("NewPortal/Booking/BookingTT.aspx")
+    def open_theory_test_booking_page(self, field_type:str):
         self._open_index("NewPortal/Booking/BookingTT.aspx", sleep_delay=2)
+
 
         if "Alert.aspx" in self.driver.current_url:
             self.log.info("You do not have access to Booking TT.")
             return False
 
+        # solve captcha
+        is_captcha_present = selenium_common.is_elem_present(self.driver, By.ID, "ctl00_ContentPlaceHolder1_CaptchaImg")
+        if is_captcha_present:
+            success, status_msg = self.captcha_solver.solve(driver=self.driver, captcha_type="normal_captcha", force_enable=False)
+            captcha_submit_btn = selenium_common.wait_for_elem(self.driver, By.ID, "ctl00_ContentPlaceHolder1_Button1")
+            captcha_submit_btn.click()
+            
+        #dismiss alert if found
+        _, alert_text = selenium_common.dismiss_alert(driver=self.driver, timeout=5)   
+        
+        if "incorrect captcha" in alert_text:
+            selenium_common.dismiss_alert(driver=self.driver, timeout=5)   
+            time.sleep(1)
+            self.log.info("Normal captcha failed for opening theory test booking page.")
+            return self.open_theory_test_booking_page(field_type)        
+
         # now agree to terms and conditions
-        try:
-            terms_checkbox = self.driver.find_element(By.ID, "ctl00_ContentPlaceHolder1_chkTermsAndCond")
+        terms_checkbox = selenium_common.is_elem_present(self.driver, By.ID, "ctl00_ContentPlaceHolder1_chkTermsAndCond")
+        agree_btn = selenium_common.is_elem_present(self.driver, By.ID, "ctl00_ContentPlaceHolder1_btnAgreeTerms")
+        if terms_checkbox and agree_btn:
             terms_checkbox.click()
-
-            agree_btn = self.driver.find_element(By.ID, "ctl00_ContentPlaceHolder1_btnAgreeTerms")
             agree_btn.click()
-        except Exception:
-            # ignore (sometimes check terms not necessary to be done)
-            pass
-
+        
         test_name_element = self.driver.find_element(By.ID, "ctl00_ContentPlaceHolder1_lblResAsmBlyDesc")
 
-        if type == Types.BTT and "Basic Theory Test" in test_name_element.text:
+        if field_type == Types.BTT and "Basic Theory Test" in test_name_element.text:
             return True
-        elif type == Types.RTT and "Riding Theory Test" in test_name_element.text:
+        elif field_type == Types.RTT and "Riding Theory Test" in test_name_element.text:
             return True
         else:
             return False
@@ -188,7 +200,7 @@ class handler(CDCAbstract):
             pass
         return True
     
-    def open_practical_lessons_booking(self, type:str=Types.PRACTICAL):
+    def open_practical_lessons_booking(self, field_type:str=Types.PRACTICAL):
         self._open_index("NewPortal/Booking/BookingPL.aspx")
         self._open_index("NewPortal/Booking/BookingPL.aspx", sleep_delay=5)
 
@@ -222,27 +234,36 @@ class handler(CDCAbstract):
     
     #TODO: Update this
     # finds all available days and time slots (without knowing which slots are free or not)
-    def get_all_session_date_times(self, type:str):
+    def get_all_session_date_times(self, field_type:str):
         for row in self.driver.find_elements(By.CSS_SELECTOR, "table#ctl00_ContentPlaceHolder1_gvLatestav tr"):
-            th_cells = row.find_elements_by_tag_name("th")
+            th_cells = row.find_elements(By.TAG_NAME, "th")
+                
+            selected_times_array = (
+                self.available_times_practical if field_type == Types.PRACTICAL else
+                self.available_times_btt if field_type == Types.BTT else
+                self.available_times_rtt if field_type == Types.RTT else
+                self.available_times_pt
+            )
             
-            selected_times_array =  ((type == Types.PRACTICAL and self.available_times_practical) or 
-                                     (type == Types.BTT and self.available_times_btt) or 
-                                     (type == Types.RTT and self.available_times_rtt) or 
-                                     (type == Types.PT and self.available_times_pt)) 
-                                    
+            selected_days_array = (
+                self.available_days_practical if field_type == Types.PRACTICAL else
+                self.available_days_btt if field_type == Types.BTT else
+                self.available_days_rtt if field_type == Types.RTT else
+                self.available_days_pt
+            )
+                
             for i, th_cell in enumerate(th_cells):
                 if i < 2:
                     continue
                 selected_times_array.append(str(th_cell.text).split("\n")[1])
 
-            td_cells = row.find_elements_by_tag_name("td")
+            td_cells = row.find_elements(By.TAG_NAME, "td")
             if len(td_cells) > 0:
-                selected_times_array.append(td_cells[0].text)
+                selected_days_array.append(td_cells[0].text)
                 continue
     
     #TODO: Update this
-    def get_all_available_sessions(self, type:str):
+    def get_all_available_sessions(self, field_type:str):
         # iterate over all "available motorcycle" images to get column and row
         # to later on get the date & time of that session
         input_elements = self.driver.find_elements(By.TAG_NAME, "input")
@@ -256,48 +277,50 @@ class handler(CDCAbstract):
             if "Images1.gif" in input_element_src or "Images3.gif" in input_element_src:
                 # e.g. ctl00_ContentPlaceHolder1_gvLatestav_ctl02_btnSession4 (02 is row, 4 is column)
                 element_id = str(input_element.get_attribute("id"))
-                row = int(element_id.split('_')[3][-1:]) - 2 # -2 to remove th row (for mapping to available_days)
-                column = int(element_id[-1]) - 1 # -1 to remove first column (for mapping to available_times)
+                element_id_spliced = element_id.split('_')
+                
+                row = int(element_id_spliced[3][-2:]) - 2
+                column = int(element_id_spliced[-1][10:]) - 1 
 
                 if "Images1.gif" in input_element_src:
-
+                    
                     available_sessions = (
-                        (type == Types.PRACTICAL and self.available_sessions_practical) or 
-                        (type == Types.BTT and self.available_sessions_btt) or 
-                        (type == Types.RTT and self.available_sessions_rtt) or 
-                        (type == Types.PT and self.available_sessions_pt) or {}
+                        self.available_sessions_practical if field_type == Types.PRACTICAL else
+                        self.available_sessions_btt if field_type == Types.BTT else
+                        self.available_sessions_rtt if field_type == Types.RTT else
+                        self.available_sessions_pt
                     )
                     
                     available_days = (
-                        (type == Types.PRACTICAL and self.available_days_practical) or 
-                        (type == Types.BTT and self.available_days_btt) or 
-                        (type == Types.RTT and self.available_days_rtt) or 
-                        (type == Types.PT and self.available_days_pt) or {}
+                        self.available_days_practical if field_type == Types.PRACTICAL else
+                        self.available_days_btt if field_type == Types.BTT else
+                        self.available_days_rtt if field_type == Types.RTT else
+                        self.available_days_pt
                     )
                     
                     available_times = (
-                        (type == Types.PRACTICAL and self.available_times_practical) or 
-                        (type == Types.BTT and self.available_times_btt) or 
-                        (type == Types.RTT and self.available_times_rtt) or 
-                        (type == Types.PT and self.available_times_pt) or {}
+                        self.available_times_practical if field_type == Types.PRACTICAL else
+                        self.available_times_btt if field_type == Types.BTT else
+                        self.available_times_rtt if field_type == Types.RTT else
+                        self.available_times_pt
                     )
                     
                     last_practical_input_element = (
-                        type == Types.PRACTICAL and input_element or last_practical_input_element
+                        input_element if field_type == Types.PRACTICAL else last_practical_input_element
                     )
                     
-
                     # create or append to list of times (in case there are multiple sessions per day)
                     # row is date, column is time
-                    if row not in available_sessions.keys():
+                    if available_days[row] not in available_sessions.keys():
                         available_sessions.update({available_days[row]: [available_times[column]]})
                     else:
-                        available_sessions.update({available_days[row]: available_sessions[row].append(available_times[column])})
+                        available_sessions[available_days[row]].append(available_times[column])
 
                 if "Images3.gif" in input_element_src:
                     has_booked_lessons_in_view = True
-
-        if type == Types.PRACTICAL:
+                    
+        # TODO: To confirm this part works
+        if field_type == Types.PRACTICAL:
             if has_booked_lessons_in_view or len(self.booked_sessions_practical) > 0:
                 has_booked_lessons = True
 
@@ -320,7 +343,7 @@ class handler(CDCAbstract):
                     self.log.info("Reverted reservation of session successfully")
                     time.sleep(2)
 
-        if type == Types.PT:
+        if field_type == Types.PT:
             if has_booked_lessons_in_view or len(self.booked_sessions_pt) > 0:
                 has_booked_lessons = True
 
