@@ -12,13 +12,20 @@ from utils.notifications.notification_manager import NotificationManager
 
 if __name__ == "__main__":
     #captcha_solver = CaptchaBypass(log=log, is_enabled=True) 
-    log = Log(directory="logs/", name="cdc-helper", config={"LOG_LEVEL":1, "PRINT_TO_OUTPUT":True, "LOG_TO_FILE":True, "CLEAR_OUTPUT_ON_RESET":True, "SHOW_STACK":False})
-    config = utils.load_config_from_yaml_file(file_path="config.yaml", log=log)
+    config = utils.load_config_from_yaml_file(file_path="config.yaml")
+    print(config)
+
+    log = Log(directory="logs/", name="cdc-helper", config=config["log_config"])
     captcha_solver = TwoCaptcha(api_key=config["two_captcha_apikey"], log=log, is_enabled=False, debug_enabled=config["captcha_debug"])
     notification_manager = NotificationManager(log = log, mail_config=config["mail_config"], telegram_config=config["telegram_config"])
 
+    log.info("Test")
+    log.debug("Test2")
+    log.warning("Test3")
+    log.error("Test4")
+    
     with handler(login_credentials=config["cdc_login_credentials"], captcha_solver=captcha_solver, log=log, browser_type="firefox", headless=False) as cdc_handler:
-        success_logging_in = cdc_handler.account_login()
+        success_logging_in = False#cdc_handler.account_login()
         monitored_types = config["monitored_types"]
 
         while True and success_logging_in:
@@ -31,7 +38,7 @@ if __name__ == "__main__":
                 if cdc_handler.open_practical_lessons_booking(field_type=Types.PRACTICAL):
                     if "REVISION" in cdc_handler.lesson_name_practical:
                         log.debug("No practical lesson available for user, seems user has completed practical lessons")
-                    else:
+                    else:   
                         #TODO: Test this part
                         cdc_handler.get_all_session_date_times(field_type=Types.PRACTICAL)
                         cdc_handler.get_all_available_sessions(field_type=Types.PRACTICAL)
