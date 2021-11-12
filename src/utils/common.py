@@ -29,6 +29,7 @@ class selenium_common:
 
 class utils:
     import shutil, os, yaml
+    from datetime import date, datetime
 
     class DEFAULT_LOG:
         def info(*args):
@@ -96,3 +97,28 @@ class utils:
                     utils.os.remove(file)
                 except Exception as e:
                     log.error("Failed to delete %s. Reason %s" % (str(file), e))
+    
+    date_formatter = {
+        "dd/mm/yyyy" : "%d/%m/%Y",
+        "mm/dd/yyyy" : "%m/%d/%y",
+        "mm dd, yyyy": "%B %d, %Y",
+        "mm-dd-yyyy" : "%b-%d-%Y",
+        
+        "dd/mm/yyyy hh:mm:ss": "%d/%m/%Y %H:%M:%S"
+    }
+    
+    def get_date_formatter(format_option, default_format_option):
+        if utils.check_key_existence_in_dict(utils.date_formatter, format_option):
+            return utils.date_formatter[format_option]
+        else:
+            return utils.date_formatter[default_format_option]
+    
+    def get_date_now(format_option:str="dd/mm/yyyy"):
+        date_format = utils.get_date_formatter(format_option, "dd/mm/yyyy")
+        today = utils.date.today()
+        return today.strftime(date_format)
+            
+    def get_datetime_now(format_option:str="dd/mm/yyyy hh:mm:ss"):
+        date_format = utils.get_date_formatter(format_option, "dd/mm/yyyy hh:mm:ss")
+        now = utils.datetime.now()
+        return now.strftime("%d/%m/%Y %H:%M:%S")
