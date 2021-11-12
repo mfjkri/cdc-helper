@@ -138,7 +138,7 @@ class handler(CDCAbstract):
                         td_cells[0].text: f"{td_cells[2].text} - {td_cells[3].text}"})
         
     def open_theory_test_booking_page(self, field_type:str):
-        self._open_index("NewPortal/Booking/BookingTT.aspx", sleep_delay=2)
+        self._open_index("NewPortal/Booking/BookingTT.aspx", sleep_delay=1)
 
         if "Alert.aspx" in self.driver.current_url:
             self.log.info("You do not have access to Booking TT.")
@@ -147,12 +147,14 @@ class handler(CDCAbstract):
         # solve captcha
         is_captcha_present = selenium_common.is_elem_present(self.driver, By.ID, "ctl00_ContentPlaceHolder1_CaptchaImg", timeout=5)
         if is_captcha_present:
-            success, status_msg = self.captcha_solver.solve(driver=self.driver, captcha_type="normal_captcha", force_enable=False)
-            captcha_submit_btn = selenium_common.wait_for_elem(self.driver, By.ID, "ctl00_ContentPlaceHolder1_Button1")
-            captcha_submit_btn.click()
+            #success, status_msg = self.captcha_solver.solve(driver=self.driver, captcha_type="normal_captcha", force_enable=False)
+            #captcha_submit_btn = selenium_common.wait_for_elem(self.driver, By.ID, "ctl00_ContentPlaceHolder1_Button1")
+            #captcha_submit_btn.click()
+            captcha_close_btn = selenium_common.wait_for_elem(self.driver, By.CLASS_NAME, "close")
+            captcha_close_btn.click()
             
         #dismiss alert if found
-        _, alert_text = selenium_common.dismiss_alert(driver=self.driver, timeout=5)   
+        _, alert_text = selenium_common.dismiss_alert(driver=self.driver, timeout=2)   
         if "incorrect captcha" in alert_text:
             selenium_common.dismiss_alert(driver=self.driver, timeout=5)   
             time.sleep(1)
