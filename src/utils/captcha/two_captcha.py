@@ -1,5 +1,6 @@
 import traceback, time, os, tempfile, base64
 from types import LambdaType
+from typing import Dict
 
 from twocaptcha import TwoCaptcha
 from twocaptcha.api import ApiException, NetworkException
@@ -11,13 +12,19 @@ from utils.common import selenium_common, utils
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
+DEFAULT_CONFIG = {
+    "api_key" : None,
+    "enabled" : True,
+    "debug_mode" : True
+}
+
 class Captcha:
-    def __init__(self, api_key:str, log:Log, is_enabled:bool=False, debug_enabled:bool=False):
-        solver = TwoCaptcha(apiKey=api_key)
+    def __init__(self, log:Log, config:Dict=DEFAULT_CONFIG):
+        solver = TwoCaptcha(apiKey=config["api_key"])
         self.solver = solver
         self.log = log
-        self.enabled = is_enabled
-        self.debug_enabled = debug_enabled
+        self.enabled = config["enabled"]
+        self.debug_enabled = config["debug_mode"]
         
     def _solve_captcha(self, solve_callback:LambdaType, result_callback:LambdaType, debug_enabled:bool):
         result = None
