@@ -13,19 +13,13 @@ from utils.notifications.notification_manager import NotificationManager
 if __name__ == "__main__":
     #captcha_solver = CaptchaBypass(log=log, is_enabled=True) 
     config = utils.load_config_from_yaml_file(file_path="config.yaml")
-    print(config)
 
     log = Log(directory="logs/", name="cdc-helper", config=config["log_config"])
-    captcha_solver = TwoCaptcha(api_key=config["two_captcha_apikey"], log=log, is_enabled=False, debug_enabled=config["captcha_debug"])
+    captcha_solver = TwoCaptcha(api_key=config["two_captcha_apikey"], log=log, is_enabled=True, debug_enabled=config["captcha_debug"])
     notification_manager = NotificationManager(log = log, mail_config=config["mail_config"], telegram_config=config["telegram_config"])
 
-    log.info("Test")
-    log.debug("Test2")
-    log.warning("Test3")
-    log.error("Test4")
-    
     with handler(login_credentials=config["cdc_login_credentials"], captcha_solver=captcha_solver, log=log, browser_type="firefox", headless=False) as cdc_handler:
-        success_logging_in = False#cdc_handler.account_login()
+        success_logging_in = cdc_handler.account_login()
         monitored_types = config["monitored_types"]
 
         while True and success_logging_in:
