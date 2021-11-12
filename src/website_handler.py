@@ -79,11 +79,14 @@ class handler(CDCAbstract):
             login_btn = selenium_common.wait_for_elem(self.driver, By.ID, "BTNSERVICE2")
             login_btn.click()
             
-            alert_dismissed = selenium_common.dismiss_alert(driver=self.driver, timeout=5)    
-            if alert_dismissed:
+            alert_found, _ = selenium_common.dismiss_alert(driver=self.driver, timeout=5)    
+            if alert_found:
                 self.log.info("Logged in successfully!")
-            return alert_dismissed
-        return False
+            return True
+        
+        self.account_logout()
+        time.sleep(1)
+        return self.account_login()
         
         
     def account_logout(self):
@@ -137,13 +140,12 @@ class handler(CDCAbstract):
     def open_theory_test_booking_page(self, field_type:str):
         self._open_index("NewPortal/Booking/BookingTT.aspx", sleep_delay=2)
 
-
         if "Alert.aspx" in self.driver.current_url:
             self.log.info("You do not have access to Booking TT.")
             return False
 
         # solve captcha
-        is_captcha_present = selenium_common.is_elem_present(self.driver, By.ID, "ctl00_ContentPlaceHolder1_CaptchaImg")
+        is_captcha_present = selenium_common.is_elem_present(self.driver, By.ID, "ctl00_ContentPlaceHolder1_CaptchaImg", timeout=5)
         if is_captcha_present:
             success, status_msg = self.captcha_solver.solve(driver=self.driver, captcha_type="normal_captcha", force_enable=False)
             captcha_submit_btn = selenium_common.wait_for_elem(self.driver, By.ID, "ctl00_ContentPlaceHolder1_Button1")
@@ -151,12 +153,12 @@ class handler(CDCAbstract):
             
         #dismiss alert if found
         _, alert_text = selenium_common.dismiss_alert(driver=self.driver, timeout=5)   
-        
         if "incorrect captcha" in alert_text:
             selenium_common.dismiss_alert(driver=self.driver, timeout=5)   
             time.sleep(1)
             self.log.info("Normal captcha failed for opening theory test booking page.")
-            return self.open_theory_test_booking_page(field_type)        
+            return self.open_theory_test_booking_page(field_type)      
+        time.sleep(0.5)  
 
         # now agree to terms and conditions
         terms_checkbox = selenium_common.is_elem_present(self.driver, By.ID, "ctl00_ContentPlaceHolder1_chkTermsAndCond")
@@ -165,14 +167,9 @@ class handler(CDCAbstract):
             terms_checkbox.click()
             agree_btn.click()
         
-        test_name_element = self.driver.find_element(By.ID, "ctl00_ContentPlaceHolder1_lblResAsmBlyDesc")
+        test_name_element = selenium_common.wait_for_elem(self.driver, By.ID, "ctl00_ContentPlaceHolder1_lblResAsmBlyDesc")
+        return (field_type == Types.BTT and "Basic Theory Test" in test_name_element.text) or (field_type == Types.RTT and "Riding Theory Test" in test_name_element.text) 
 
-        if field_type == Types.BTT and "Basic Theory Test" in test_name_element.text:
-            return True
-        elif field_type == Types.RTT and "Riding Theory Test" in test_name_element.text:
-            return True
-        else:
-            return False
     
     def open_practical_test_booking_page(self):
         self._open_index("NewPortal/Booking/BookingPT.aspx")
