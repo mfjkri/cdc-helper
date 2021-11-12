@@ -40,7 +40,7 @@ class utils:
         def warn(*args):
             print("[WARN]", utils.concat_tuple(args))
 
-    def load_config_from_yaml_file(file_path:str, log):
+    def load_config_from_yaml_file(file_path:str, log=DEFAULT_LOG):
         if not utils.os.path.isfile(file_path):
             raise Exception(f"No file found at {file_path}")
         with open(file_path, 'r') as stream:
