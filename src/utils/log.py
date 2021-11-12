@@ -6,14 +6,14 @@ from utils.common import selenium_common
 
 FORMATTER = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
 DEFAULT_CONFIG = {
-    "LOG_LEVEL" : 1, # 1 - DEBUG, 2 - INFO, 3 - WARN, 4- ERROR
+    "log_level" : 1, # 1 - DEBUG, 2 - INFO, 3 - WARN, 4- ERROR
     
-    "PRINT_TO_OUTPUT" : True,
-    "LOG_TO_FILE" : True,
+    "print_log_to_output" : True,
+    "write_log_to_file" : True,
     
-    "CLEAR_OUTPUT_ON_RESET" : False,
+    "clear_logs_init" : False,
     
-    "SHOW_STACK" : True,
+    "appends_stack_call_to_log" : True,
 }
 
 class Log:
@@ -26,44 +26,43 @@ class Log:
         self.directory = directory 
         self.config = utils.init_config_with_default(config, DEFAULT_CONFIG)
 
-        if self.config["CLEAR_OUTPUT_ON_RESET"]:
+        if self.config["clear_logs_init"]:
             utils.clear_directory(directory=self.directory, log=self.logger)
         
-        if self.config["PRINT_TO_OUTPUT"]:
+        if self.config["print_log_to_output"]:
             terminal_output = logging.StreamHandler(sys.stdout)
             terminal_output.setFormatter(FORMATTER)
             log.addHandler(terminal_output)
         
-        if self.config["LOG_TO_FILE"]:        
+        if self.config["write_log_to_file"]:        
             file_output = logging.FileHandler('{dir}/tracker_{date}.log'.format(dir=directory, date=datetime.today().strftime("%Y-%m-%d_%H-%M")))
             file_output.setFormatter(FORMATTER)
             log.addHandler(file_output)
 
-        log.setLevel(int(self.config["LOG_LEVEL"]) * 10)
+        log.setLevel(int(self.config["log_level"]) * 10)
+        
+    def append_stack_if(self, log_type, *output):
+        msg = utils.concat_tuple(output)
+        if self.config["appends_stack_call_to_log"]:
+            log_type("=======================================================================================")
+            log_type(*output, stack_info=True)
+            log_type("\n=======================================================================================\n")
+        else:
+            log_type(msg)
         
     def info(self, *output):
-        msg = utils.concat_tuple(output)
-                
-        if self.config["SHOW_STACK"]:
-            caller_info = self.logger.findCaller()
-            
-            self.logger.info("============================================")
-            self.logger.info(msg)
-            self.logger.info(caller_info)
-        else:
-            self.logger.info(msg)
+        self.append_stack_if(self.logger.info, *output)
             
     def debug(self, *output):
-        self.logger.debug(utils.concat_tuple(output))
+        self.append_stack_if(self.logger.debug, *output)
             
     def error(self, *output):
-        self.logger.error(utils.concat_tuple(output))
+        self.append_stack_if(self.logger.error, *output)
         
     def warning(self, *output):
-        self.logger.warning(utils.concat_tuple(output))
+        self.append_stack_if(self.logger.warning, *output)
         
         
-    
     
     def info_if(self, condition:bool, *output):
         if condition:
