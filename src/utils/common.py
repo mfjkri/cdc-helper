@@ -104,7 +104,8 @@ class utils:
         "mm dd, yyyy": "%B %d, %Y",
         "mm-dd-yyyy" : "%b-%d-%Y",
         
-        "dd/mm/yyyy hh:mm:ss": "%d/%m/%Y %H:%M:%S"
+        "dd/mm/yyyy hh:mm:ss": "%d/%m/%Y %H:%M:%S",
+        "dd-mm-yy hh:mm:ss" : "%d-%m-%Y %H:%M:%S"
     }
     
     def get_date_formatter(format_option, default_format_option):
@@ -119,6 +120,6 @@ class utils:
         return today.strftime(date_format)
             
     def get_datetime_now(format_option:str="dd/mm/yyyy hh:mm:ss"):
-        date_format = utils.get_date_formatter(format_option, "dd/mm/yyyy hh:mm:ss")
+        datetime_format = utils.get_date_formatter(format_option, "dd/mm/yyyy hh:mm:ss")
         now = utils.datetime.now()
-        return now.strftime("%d/%m/%Y %H:%M:%S")
+        return now.strftime(datetime_format)
