@@ -1,8 +1,8 @@
 import smtplib, socket
 from email.message import EmailMessage 
 
-from utils.common import utils
-from utils.log import Log
+from src.utils.common import utils
+from src.utils.log import Log
 
 class NoMailServer(Exception):
     def __init__(self, error, *args: object) -> None:

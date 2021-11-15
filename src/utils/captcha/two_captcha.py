@@ -6,11 +6,11 @@ from twocaptcha import TwoCaptcha
 from twocaptcha.api import ApiException, NetworkException
 from twocaptcha.solver import TimeoutException
 
-from utils.log import Log
-from utils.common import selenium_common, utils
-
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+
+from src.utils.log import Log
+from src.utils.common import selenium_common, utils
 
 DEFAULT_CONFIG = {
     "api_key" : None,

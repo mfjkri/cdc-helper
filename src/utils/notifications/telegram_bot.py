@@ -1,6 +1,6 @@
 import requests
-from utils.common import utils
-from utils.log import Log
+from src.utils.common import utils
+from src.utils.log import Log
 
 class TelegramBot:
     def __init__(self, token:str, default_chat_id:int, log:Log):

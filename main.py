@@ -1,13 +1,12 @@
+#!/media/Programming/repos/py/_selenium/CDC_HELPER/venv/bin/python
 import time
-from logging import log
+from src.website_handler import handler, Types
 
-from website_handler import handler, Types
-
-from utils.common import utils
-from utils.log import Log
-from utils.captcha.two_captcha import Captcha as TwoCaptcha
-from utils.captcha.captcha_bypass import Captcha as CaptchaBypass
-from utils.notifications.notification_manager import NotificationManager
+from src.utils.common import utils
+from src.utils.log import Log
+from src.utils.captcha.two_captcha import Captcha as TwoCaptcha
+from src.utils.captcha.captcha_bypass import Captcha as CaptchaBypass
+from src.utils.notifications.notification_manager import NotificationManager
 
 
 if __name__ == "__main__":
@@ -42,6 +41,14 @@ if __name__ == "__main__":
                             # TODO: Notify user if earlier sessions are available
                 else:
                     pass # No course found
+                
+            if monitored_types["ett"]:
+                if cdc_handler.open_etrial_test_book_page():
+                    cdc_handler.get_all_session_date_times(field_type=Types.ETT)
+                    cdc_handler.get_all_available_sessions(field_type=Types.ETT)
+                    # TODO: Notify user if earlier sessions are available
+                else:
+                    log.debug("User does not have ETT as an available option.")
             
             if monitored_types["btt"]:
                 if cdc_handler.open_theory_test_booking_page(field_type=Types.BTT):
@@ -61,7 +68,9 @@ if __name__ == "__main__":
                     
             # TODO: Add more checks (RTT, PT)
 
+            print(cdc_handler)
             time.sleep(config["refresh_rate"])
+            break
 
     
         cdc_handler.account_logout()

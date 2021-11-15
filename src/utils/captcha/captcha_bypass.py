@@ -11,9 +11,9 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 import selenium
 
-from utils.log import Log
-from utils.common import selenium_common
-from utils.common import utils
+from src.utils.log import Log
+from src.utils.common import selenium_common
+from src.utils.common import utils
 
 class NoCaptchaException(Exception):
     def __init__(self, error, *args: object) -> None:
@@ -46,7 +46,7 @@ class Captcha:
             return (False, "CAPTCHA NOT FOUND")
         
         temp_dir = tempfile.gettempdir()
-        self.log.debug(temp_dir)
+        
         mp3_file = os.path.join(temp_dir, "_tmp.mp3")
         wav_file = os.path.join(temp_dir, "_tmp.wav")
         temp_files = [mp3_file, wav_file]
