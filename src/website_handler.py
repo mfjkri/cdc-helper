@@ -1,4 +1,5 @@
 import time
+from typing import Dict, List
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -7,11 +8,14 @@ from selenium.webdriver.support.ui import Select, WebDriverWait
 
 from abstracts.cdc_abstract import CDCAbstract, Types
 
-from utils.common import selenium_common
-from utils.common import utils
+from src.utils.common import selenium_common
+from src.utils.common import utils
 
 class handler(CDCAbstract):
-    def __init__(self, login_credentials, captcha_solver, log, browser_type="firefox", headless=False):
+    def __init__(self, login_credentials, captcha_solver, log, browser_config):
+        browser_type = browser_config["type"] or "firefox"
+        headless = browser_config["headless_mode"] or False
+        
         if browser_type.lower() != "firefox" and browser_type.lower() != "chrome":
             log.error("Invalid browser_type was given!")
             raise Exception("Invalid BROWSER_TYPE")
@@ -53,6 +57,69 @@ class handler(CDCAbstract):
             
     def __str__(self):
         return super().__str__()
+    
+    def check_access_rights(self, webpage_name:str):
+        if "Alert.aspx" in self.driver.current_url:
+            self.log.info(f"You do not have access to {webpage_name}.")
+            return False
+        return True
+        
+    def dismiss_normal_captcha(self, solve_captcha:bool=False, force_enabled:bool=False):
+        is_captcha_present = selenium_common.is_elem_present(self.driver, By.ID, "ctl00_ContentPlaceHolder1_CaptchaImg", timeout=5)
+        if is_captcha_present:
+            if solve_captcha:
+                success, _ = self.captcha_solver.solve(driver=self.driver, captcha_type="normal_captcha", force_enable=force_enabled)
+                captcha_submit_btn = selenium_common.wait_for_elem(self.driver, By.ID, "ctl00_ContentPlaceHolder1_Button1")
+                captcha_submit_btn.click()
+                return success
+            else:
+                captcha_close_btn = selenium_common.wait_for_elem(self.driver, By.CLASS_NAME, "close")
+                captcha_close_btn.click()
+        else:
+            return True
+            
+        #dismiss alert if found
+        _, alert_text = selenium_common.dismiss_alert(driver=self.driver, timeout=2)   
+        if "incorrect captcha" in alert_text:
+            selenium_common.dismiss_alert(driver=self.driver, timeout=5)   
+            self.log.info("Normal captcha failed for opening theory test booking page.")
+            return False  
+        return True
+    
+    def accept_terms_and_conditions(self):
+        terms_checkbox = selenium_common.is_elem_present(self.driver, By.ID, "ctl00_ContentPlaceHolder1_chkTermsAndCond")
+        agree_btn = selenium_common.is_elem_present(self.driver, By.ID, "ctl00_ContentPlaceHolder1_btnAgreeTerms")
+        if terms_checkbox and agree_btn:
+            terms_checkbox.click()
+            agree_btn.click()
+            
+    def get_course_data(self):
+        course_selection = Select(self.driver.find_element(By.ID, "ctl00_ContentPlaceHolder1_ddlCourse"))
+        number_of_options = len(course_selection.options)
+        
+        course_data = {"course_selection" :course_selection, "available_courses" : []}
+        
+        for option_index in range(0, number_of_options):
+            option = course_selection.options[option_index]
+            course_data["available_courses"].append(str(option.text.strip()))
+
+        return course_data
+        
+    def select_course_from_name(self, course_data:Dict, course_name:str):
+        for selection_idx in range(0, len(course_data["available_courses"])):
+            current_course = course_data["available_courses"][selection_idx]
+            if course_name in current_course:
+                course_data["course_selection"].select_by_index(selection_idx)
+                return selection_idx
+        return False
+            
+    def select_course_from_idx(self, course_data:Dict, course_idx:str):
+        if course_idx > 0 and course_idx < len(course_data["available_courses"]):
+            self.log.error(f"Course selected is out of range. {course_data['available_courses']}")
+            return False
+        
+        course_data["course_selection"].select_by_index(course_idx)
+        return course_data["available_courses"][course_idx]
         
     def open_home_page(self, sleep_delay = None):
         self.driver.get(self.home_url)
@@ -79,15 +146,14 @@ class handler(CDCAbstract):
             login_btn = selenium_common.wait_for_elem(self.driver, By.ID, "BTNSERVICE2")
             login_btn.click()
             
-            alert_found, _ = selenium_common.dismiss_alert(driver=self.driver, timeout=5)    
-            if alert_found:
-                self.log.info("Logged in successfully!")
-            return True
-        
-        self.account_logout()
-        time.sleep(1)
-        return self.account_login()
-        
+            _, alert_text = selenium_common.dismiss_alert(driver=self.driver, timeout=5)    
+            if "complete the captcha" in alert_text:
+                self.log.info("Wrong captcha given.")
+                self.account_logout()
+                time.sleep(1)
+                return self.account_login()
+            else:
+                return True
         
     def account_logout(self):
         self._open_index("NewPortal/logOut.aspx?PageName=Logout")
@@ -104,7 +170,7 @@ class handler(CDCAbstract):
         # Check which practical lesson is the latest (in case there are e.g. lesson 5 and 6 bookings)
         latest_booked_practical_lesson_number = 0
         for row in rows:
-            td_cells = row.find_elements_by_tag_name("td")
+            td_cells = row.find_elements(By.TAG_NAME, "td")
             if len(td_cells) > 0:
                 lesson_name = td_cells[4].text
                 if "2BL" in lesson_name:
@@ -113,143 +179,91 @@ class handler(CDCAbstract):
                         latest_booked_practical_lesson_number = lesson_number
 
         for row in rows:
-            td_cells = row.find_elements_by_tag_name("td")
+            td_cells = row.find_elements(By.TAG_NAME, "td")
             if len(td_cells) > 0:
                 lesson_name = td_cells[4].text
-                if "2BL" in lesson_name:
-                    # do not consider old (to be cancelled) lessons because they could influence the earlier notification detection
-                    if lesson_name[len(lesson_name) - 1] != str(latest_booked_practical_lesson_number):
-                        self.log.debug(f"Not considering {lesson_name} lesson as there are more recent lessons available (2BL{latest_booked_practical_lesson_number})")
-                        continue
-                    self.lesson_name_practical = lesson_name
-                    self.booked_sessions_practical.update({
-                        td_cells[0].text: f"{td_cells[2].text} - {td_cells[3].text}"})
-                if "RTT" in lesson_name:
-                    self.lesson_name_rtt = lesson_name
-                    self.booked_sessions_rtt.update({
-                        td_cells[0].text: f"{td_cells[2].text} - {td_cells[3].text}"})
-                if "BTT" in lesson_name:
-                    self.lesson_name_btt = lesson_name
-                    self.booked_sessions_btt.update({
-                        td_cells[0].text: f"{td_cells[2].text} - {td_cells[3].text}"})
-                if "PT" in lesson_name:
-                    self.lesson_name_pt = lesson_name
-                    self.booked_sessions_pt.update({
-                        td_cells[0].text: f"{td_cells[2].text} - {td_cells[3].text}"})
+                
+                field_type = (
+                    Types.PRACTICAL if "2BL" in lesson_name else
+                    Types.ETT if "E-TRIAL" in lesson_name else
+                    Types.BTT if "BTT" in lesson_name else
+                    Types.RTT if "RTT" in lesson_name else
+                    Types.PT if "PT" in lesson_name else
+                    None
+                )
+                
+                if field_type:
+                    if field_type != Types.PRACTICAL or (field_type == Types.PRACTICAL and lesson_name[len(lesson_name) - 1] == str(latest_booked_practical_lesson_number)):
+                        self.set_attribute_with_fieldtype("lesson_name", field_type, lesson_name)
+                        selected_booked_sessions = self.get_attribute_with_fieldtype("booked_sessions", field_type)
+                        
+                        if td_cells[0].text not in selected_booked_sessions.keys():
+                            selected_booked_sessions.update({td_cells[0].text: [f"{td_cells[2].text} - {td_cells[3].text}"]})
+                        else:
+                            selected_booked_sessions[td_cells[0].text].append(f"{td_cells[2].text} - {td_cells[3].text}")
+                
+    def open_etrial_test_book_page(self):
+        self._open_index("NewPortal/Booking/BookingETrial.aspx", sleep_delay=1)
+
+        if self.check_access_rights("Booking E-trial Test"):
+            course_data = self.get_course_data()
+            if self.select_course_from_name(course_data, "E-Trial Test"):
+                if self.dismiss_normal_captcha(True):
+                    time.sleep(0.5)
+                    return True
+                else:
+                    return self.open_etrial_test_book_page()
+        return False 
         
     def open_theory_test_booking_page(self, field_type:str):
         self._open_index("NewPortal/Booking/BookingTT.aspx", sleep_delay=1)
 
-        if "Alert.aspx" in self.driver.current_url:
-            self.log.info("You do not have access to Booking TT.")
+        if self.check_access_rights("Booking Theory Test"):
+            if self.dismiss_normal_captcha(False):
+                time.sleep(0.5)  
+                self.accept_terms_and_conditions()
+                
+                test_name_element = selenium_common.wait_for_elem(self.driver, By.ID, "ctl00_ContentPlaceHolder1_lblResAsmBlyDesc")
+                return (field_type == Types.BTT and "Basic Theory Test" in test_name_element.text) or (field_type == Types.RTT and "Riding Theory Test" in test_name_element.text) 
+            else:
+                return self.open_theory_test_booking_page(field_type)
+        else:
             return False
-
-        # solve captcha
-        is_captcha_present = selenium_common.is_elem_present(self.driver, By.ID, "ctl00_ContentPlaceHolder1_CaptchaImg", timeout=5)
-        if is_captcha_present:
-            #success, status_msg = self.captcha_solver.solve(driver=self.driver, captcha_type="normal_captcha", force_enable=False)
-            #captcha_submit_btn = selenium_common.wait_for_elem(self.driver, By.ID, "ctl00_ContentPlaceHolder1_Button1")
-            #captcha_submit_btn.click()
-            captcha_close_btn = selenium_common.wait_for_elem(self.driver, By.CLASS_NAME, "close")
-            captcha_close_btn.click()
-            
-        #dismiss alert if found
-        _, alert_text = selenium_common.dismiss_alert(driver=self.driver, timeout=2)   
-        if "incorrect captcha" in alert_text:
-            selenium_common.dismiss_alert(driver=self.driver, timeout=5)   
-            time.sleep(1)
-            self.log.info("Normal captcha failed for opening theory test booking page.")
-            return self.open_theory_test_booking_page(field_type)      
-        time.sleep(0.5)  
-
-        # now agree to terms and conditions
-        terms_checkbox = selenium_common.is_elem_present(self.driver, By.ID, "ctl00_ContentPlaceHolder1_chkTermsAndCond")
-        agree_btn = selenium_common.is_elem_present(self.driver, By.ID, "ctl00_ContentPlaceHolder1_btnAgreeTerms")
-        if terms_checkbox and agree_btn:
-            terms_checkbox.click()
-            agree_btn.click()
-        
-        test_name_element = selenium_common.wait_for_elem(self.driver, By.ID, "ctl00_ContentPlaceHolder1_lblResAsmBlyDesc")
-        return (field_type == Types.BTT and "Basic Theory Test" in test_name_element.text) or (field_type == Types.RTT and "Riding Theory Test" in test_name_element.text) 
-
     
     def open_practical_test_booking_page(self):
-        self._open_index("NewPortal/Booking/BookingPT.aspx")
-        self._open_index("NewPortal/Booking/BookingPT.aspx", sleep_delay=2)
+        self._open_index("NewPortal/Booking/BookingPT.aspx", sleep_delay=1)
 
-        if "Alert.aspx" in self.driver.current_url:
-            self.log.info("You do not have access to Booking PT.")
+        if self.check_access_rights("Booking Practical Test"):
+            if self.dismiss_normal_captcha():
+                time.sleep(0.5)  
+                self.accept_terms_and_conditions()
+
+                return True
+            else:
+                return self.open_practical_test_booking_page()
+        else:
             return False
-
-        try:
-            # now say "No" to the "Do you currently hold other classes of Qualified Driving Licence?" question
-            no_btn = self.driver.find_element(By.ID, "ctl00_ContentPlaceHolder1_btnNo")
-            no_btn.click()
-
-            # now agree to terms and conditions
-            WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.ID, "ctl00_ContentPlaceHolder1_chkTermsAndCond")))
-
-            terms_checkbox = self.driver.find_element(By.ID, "ctl00_ContentPlaceHolder1_chkTermsAndCond")
-            terms_checkbox.click()
-            
-            agree_btn = self.driver.find_element(By.ID, "ctl00_ContentPlaceHolder1_btnAgreeTerms")            
-            agree_btn.click()
-        except Exception:
-            # ignore (sometimes check terms not necessary to be done)
-            pass
-        return True
     
     def open_practical_lessons_booking(self, field_type:str=Types.PRACTICAL):
-        self._open_index("NewPortal/Booking/BookingPL.aspx")
-        self._open_index("NewPortal/Booking/BookingPL.aspx", sleep_delay=5)
-
-        course_selection = Select(self.driver.find_element(By.ID, "ctl00_ContentPlaceHolder1_ddlCourse"))
-        number_of_options = len(course_selection.options)
+        self._open_index("NewPortal/Booking/BookingPL.aspx", sleep_delay=1)
         
-        # sometimes there are multiple options (like "CLASS 2B CIRCUIT REVISION" and "Class 2B Lesson 5")
-        # in that case, choose the "Class 2B Lesson *" as this is much more relevant to be notified for
-        selection_idx = 1
-        avail_options = ["-"]
-        
-        if number_of_options > 1:
-            for option_index in range(1, number_of_options):
-                option = course_selection.options[option_index]
-                avail_options.append(str(option.text.strip()))
-                
-                if "Class 2B Lesson" in option.text:
-                    selection_idx = option_index
-
-            if number_of_options > 2:
-                self.log.info(f"There are multiple options ({avail_options}) available. Choosing: {avail_options[selection_idx]}.")
-        else:
-            self.log.info("No available course found for booking of practical lessons!")
-            return False
-        
-        self.lesson_name_practical = avail_options[selection_idx]
-        course_selection.select_by_index(selection_idx)
-
-        WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.ID, 'ctl00_ContentPlaceHolder1_lblSessionNo')))
-        return True
+        if self.check_access_rights("Booking Practical Test"):
+            course_data = self.get_course_data()
+            if self.select_course_from_name(course_data, "Class 2B Lesson") or self.select_course_from_idx(course_data, 1):
+                if self.dismiss_normal_captcha(True):
+                    time.sleep(0.5)
+                    WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.ID, 'ctl00_ContentPlaceHolder1_lblSessionNo')))
+                    return True
+                else:
+                    return self.open_etrial_test_book_page()
+        return False
     
-    #TODO: Update this
-    # finds all available days and time slots (without knowing which slots are free or not)
     def get_all_session_date_times(self, field_type:str):
         for row in self.driver.find_elements(By.CSS_SELECTOR, "table#ctl00_ContentPlaceHolder1_gvLatestav tr"):
             th_cells = row.find_elements(By.TAG_NAME, "th")
-                
-            selected_times_array = (
-                self.available_times_practical if field_type == Types.PRACTICAL else
-                self.available_times_btt if field_type == Types.BTT else
-                self.available_times_rtt if field_type == Types.RTT else
-                self.available_times_pt
-            )
             
-            selected_days_array = (
-                self.available_days_practical if field_type == Types.PRACTICAL else
-                self.available_days_btt if field_type == Types.BTT else
-                self.available_days_rtt if field_type == Types.RTT else
-                self.available_days_pt
-            )
+            selected_times_array = self.get_attribute_with_fieldtype("available_times", field_type)
+            selected_days_array = self.get_attribute_with_fieldtype("available_days", field_type)
                 
             for i, th_cell in enumerate(th_cells):
                 if i < 2:
@@ -259,9 +273,7 @@ class handler(CDCAbstract):
             td_cells = row.find_elements(By.TAG_NAME, "td")
             if len(td_cells) > 0:
                 selected_days_array.append(td_cells[0].text)
-                continue
     
-    #TODO: Update this
     def get_all_available_sessions(self, field_type:str):
         # iterate over all "available motorcycle" images to get column and row
         # to later on get the date & time of that session
@@ -283,26 +295,9 @@ class handler(CDCAbstract):
 
                 if "Images1.gif" in input_element_src:
                     
-                    available_sessions = (
-                        self.available_sessions_practical if field_type == Types.PRACTICAL else
-                        self.available_sessions_btt if field_type == Types.BTT else
-                        self.available_sessions_rtt if field_type == Types.RTT else
-                        self.available_sessions_pt
-                    )
-                    
-                    available_days = (
-                        self.available_days_practical if field_type == Types.PRACTICAL else
-                        self.available_days_btt if field_type == Types.BTT else
-                        self.available_days_rtt if field_type == Types.RTT else
-                        self.available_days_pt
-                    )
-                    
-                    available_times = (
-                        self.available_times_practical if field_type == Types.PRACTICAL else
-                        self.available_times_btt if field_type == Types.BTT else
-                        self.available_times_rtt if field_type == Types.RTT else
-                        self.available_times_pt
-                    )
+                    available_sessions = self.get_attribute_with_fieldtype("available_sessions", field_type)
+                    available_days = self.get_attribute_with_fieldtype("available_days", field_type)
+                    available_times = self.get_attribute_with_fieldtype("available_times", field_type)                                         
                     
                     last_practical_input_element = (
                         input_element if field_type == Types.PRACTICAL else last_practical_input_element

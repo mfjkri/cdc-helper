@@ -1,10 +1,21 @@
 import re
+from typing import Any
 
 class CDCAbstract:
     def __init__(self, username, password, headless=False):
         self.username = username
         self.password = password
         self.headless = headless
+        
+         # Simulator
+        self.available_days_simulator = []
+        self.available_days_in_view_simulator = []
+        self.available_times_simulator = []
+        self.available_sessions_simulator = {}
+        self.booked_sessions_simulator = {}
+        self.lesson_name_simulator = ''
+        self.can_book_next_simulator = True
+        self.has_auto_reserved_simulator = False
 
         # Practical
         self.available_days_practical = []
@@ -22,6 +33,14 @@ class CDCAbstract:
         self.available_times_rr = []
         self.available_sessions_rr = {}
         self.booked_sessions_rr = {}
+        
+        # E-Trial Theory Test
+        self.available_days_ett = []
+        self.available_days_in_view_ett = []
+        self.available_times_ett = []
+        self.available_sessions_ett = {}
+        self.booked_sessions_ett = {}
+        self.lesson_name_ett = ''
 
         # BTT
         self.available_days_btt = []
@@ -58,6 +77,16 @@ class CDCAbstract:
             user = {str(self.username)},
             password = {str(self.password)},
             headless = {str(self.headless)},
+            
+            # Simulator
+            available_days_simulator = {str(self.available_days_simulator)}
+            available_days_in_view_simulator = {str(self.available_days_in_view_simulator)}
+            available_times_simulator = {str(self.available_times_simulator)}
+            available_sessions_simulator = {str(self.available_sessions_simulator)}
+            booked_sessions_simulator = {str(self.booked_sessions_simulator)}
+            lesson_name_simulator = {str(self.lesson_name_practical)}
+            can_book_next_simulator = {str(self.can_book_next_simulator)}
+            has_auto_reserved_simulator = {str(self.has_auto_reserved_simulator)}
 
             # Practical
             available_days_practical = {str(self.available_days_practical)}
@@ -75,6 +104,14 @@ class CDCAbstract:
             available_times_rr = {str(self.available_times_rr)}
             available_sessions_rr = {str(self.available_sessions_rr)}
             booked_sessions_rr = {str(self.booked_sessions_rr)}
+            
+            # ETT
+            available_days_ett = {str(self.available_days_ett)}
+            available_days_in_view_ett = {str(self.available_days_in_view_ett)}
+            available_times_ett = {str(self.available_times_ett)}
+            available_sessions_ett = {self.available_sessions_ett}
+            booked_sessions_ett = {str(self.booked_sessions_ett)}
+            lesson_name_ett = {str(self.lesson_name_ett)}
 
             # BTT
             available_days_btt = {str(self.available_days_btt)}
@@ -103,10 +140,24 @@ class CDCAbstract:
             # ------------------------------------- - ------------------------------------ #
             """, flags=re.M
         )
+        
+    def get_attribute(self, attribute:str):
+        return getattr(self, attribute)
+    
+    def set_attribute(self, attribute:str, value:Any):
+        setattr(self, attribute, value)
+
+    def get_attribute_with_fieldtype(self, attribute:str, field_type:str):
+        return getattr(self, f"{attribute}_{field_type}")
+    
+    def set_attribute_with_fieldtype(self, attribute:str, field_type:str, value:Any):
+        setattr(self, f"{attribute}_{field_type}", value)
 
 class Types:
+    SIMULATOR = "simulator"
     PRACTICAL = "practical"
     ROAD_REVISION = "rr"
+    ETT = "ett"
     BTT = "btt"
     RTT = "rtt"
     PT = "pt"
