@@ -1,8 +1,8 @@
 import os, shutil, sys, logging
 from datetime import datetime
 
-from utils.common import utils
-from utils.common import selenium_common
+from src.utils.common import utils
+from src.utils.common import selenium_common
 
 FORMATTER = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
 DEFAULT_CONFIG = {

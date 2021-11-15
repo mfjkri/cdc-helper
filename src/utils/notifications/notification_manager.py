@@ -1,5 +1,5 @@
-from utils.notifications.mail import Mail
-from utils.notifications.telegram_bot import TelegramBot
+from src.utils.notifications.mail import Mail
+from src.utils.notifications.telegram_bot import TelegramBot
 
 
 class NotificationManager:
