@@ -51,9 +51,9 @@ class CDCAbstract:
         abstract_str = "# ------------------------------------- - ------------------------------------ #\n"
         abstract_str += "CDC_ABSTRACT\n"
         
-        abstract_str += f"user = {str(self.username)}"
-        abstract_str += f"password = {str(self.password)}"
-        abstract_str += f"headless = {str(self.headless)}"
+        abstract_str += f"user = {str(self.username)}\n"
+        abstract_str += f"password = {str(self.password)}\n"
+        abstract_str += f"headless = {str(self.headless)}\n"
 
         abstract_str += "\n"
         
