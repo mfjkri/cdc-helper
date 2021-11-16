@@ -4,6 +4,9 @@ from src.utils.notifications.telegram_bot import TelegramBot
 
 class NotificationManager:
     def __init__(self, log, mail_config:dict=None, telegram_config:dict=None):
+        self.mail_server = False
+        self.telegram_bot = False
+        
         if mail_config and mail_config["email_notification_enabled"]:
             self.mail_server = Mail(
                 smtp_server=mail_config["smtp_server"], 
