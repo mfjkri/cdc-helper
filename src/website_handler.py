@@ -1,4 +1,4 @@
-import time
+import time, datetime
 from typing import Dict, List
 
 from selenium import webdriver
@@ -11,8 +11,15 @@ from abstracts.cdc_abstract import CDCAbstract, Types
 from src.utils.common import selenium_common
 from src.utils.common import utils
 
+def convert_to_datetime(date_str:str, time_str:str=None):
+    if time_str:
+        time_str = time_str.split(' ')[0]
+        return datetime.datetime.strptime(f'{date_str} | {time_str}', '%d/%b/%Y | %H:%M')
+    else:
+        return datetime.datetime.strptime(date_str, "%d/%b/%Y")
+
 class handler(CDCAbstract):
-    def __init__(self, login_credentials, captcha_solver, log, browser_config):
+    def __init__(self, login_credentials, captcha_solver, log, notification_manager, browser_config):
         browser_type = browser_config["type"] or "firefox"
         headless = browser_config["headless_mode"] or False
         
@@ -25,6 +32,7 @@ class handler(CDCAbstract):
         
         self.captcha_solver = captcha_solver
         self.log = log
+        self.notification_manager = notification_manager
         
         self.username = login_credentials["username"]
         self.password = login_credentials["password"]
@@ -46,8 +54,7 @@ class handler(CDCAbstract):
         return self
     
     def __exit__(self, *args):
-        #self.driver.close()
-        pass
+        self.driver.close()
         
     def _open_index(self, path: str, sleep_delay = None):
         self.driver.get(f"{self.booking_url}/{path}")
@@ -71,7 +78,8 @@ class handler(CDCAbstract):
                 success, _ = self.captcha_solver.solve(driver=self.driver, captcha_type="normal_captcha", force_enable=force_enabled)
                 captcha_submit_btn = selenium_common.wait_for_elem(self.driver, By.ID, "ctl00_ContentPlaceHolder1_Button1")
                 captcha_submit_btn.click()
-                return success
+                if not success:
+                    return False
             else:
                 captcha_close_btn = selenium_common.wait_for_elem(self.driver, By.CLASS_NAME, "close")
                 captcha_close_btn.click()
@@ -163,7 +171,6 @@ class handler(CDCAbstract):
         self._open_index("NewPortal/Booking/StatementBooking.aspx")
         self._open_index("NewPortal/Booking/StatementBooking.aspx")
 
-    #TODO: Update this
     def get_booked_lesson_date_time(self):
         rows = self.driver.find_elements(By.CSS_SELECTOR, "table#ctl00_ContentPlaceHolder1_gvBooked tr")
 
@@ -230,6 +237,8 @@ class handler(CDCAbstract):
         else:
             return False
     
+    
+    # TODO: Fix and test this part when I have access
     def open_practical_test_booking_page(self):
         self._open_index("NewPortal/Booking/BookingPT.aspx", sleep_delay=1)
 
@@ -244,6 +253,7 @@ class handler(CDCAbstract):
         else:
             return False
     
+    # TODO: Fix and test this part when I have access
     def open_practical_lessons_booking(self, field_type:str=Types.PRACTICAL):
         self._open_index("NewPortal/Booking/BookingPL.aspx", sleep_delay=1)
         
@@ -357,3 +367,90 @@ class handler(CDCAbstract):
                     self.driver.find_element(By.ID, last_practical_input_element_id).click()
                     self.log.info("Reverted reservation of session successfully")
                     time.sleep(2)
+                    
+    def send_notification_update(self, field_type:str):
+        earlier_sessions = self.get_attribute_with_fieldtype("earlier_sessions", field_type)
+        booked_sessions = self.get_attribute_with_fieldtype("booked_sessions", field_type)
+
+        notif_msg = "\n"
+        
+        notif_msg += "--------------------------\n"
+        notif_msg += "Booked sesssions:\n"
+        for _, booked_date_str in enumerate(booked_sessions):
+            notif_msg += f"{booked_date_str}:\n"
+            
+            booked_time_slots = booked_sessions[booked_date_str]
+            for i in range (0, len(booked_time_slots)):
+                time_slot = booked_time_slots[i]
+                notif_msg += f"  -> {time_slot}\n"
+        notif_msg += "--------------------------\n\n"
+        
+        notif_msg += "Available sesssions:\n"
+        for _, earlier_date_str in enumerate(earlier_sessions):
+            notif_msg += f"{earlier_date_str}:\n"
+            
+            earlier_time_slots = earlier_sessions[earlier_date_str]
+            for i in range (0, len(earlier_time_slots)):
+                time_slot = earlier_time_slots[i]
+                notif_msg += f"  -> {time_slot}\n"
+            notif_msg += "\n"
+
+        self.notification_manager.send_notification_all(
+            title=f"{field_type.upper()}: UPDATE",
+            msg=notif_msg
+        )
+        
+        return notif_msg
+
+    def check_if_earlier_available_sessions(self, field_type:str):
+        available_sessions = self.get_attribute_with_fieldtype("available_sessions", field_type)    
+        booked_sessions = self.get_attribute_with_fieldtype("booked_sessions", field_type)
+        earlier_sessions = self.get_attribute_with_fieldtype("earlier_sessions", field_type)
+        hasChanges = False
+        
+        for _, available_date_str in enumerate(available_sessions):
+            available_date = convert_to_datetime(available_date_str)
+            
+            for _, booked_date_str in enumerate(booked_sessions):
+                booked_date = convert_to_datetime(booked_date_str)
+                
+                if available_date < booked_date:
+                    available_time_slots = available_sessions[available_date_str]
+
+                    if available_date_str not in earlier_sessions.keys():
+                        hasChanges = True
+                        earlier_sessions[available_date_str] = available_time_slots
+                    else:
+                        for i in range(0, len(available_time_slots)):
+                            time_slot = available_time_slots[i]
+                            
+                            if time_slot not in earlier_sessions[available_date_str]:
+                                hasChanges = True
+                                earlier_sessions[available_date_str].append(time_slot)
+                    
+                elif available_date == booked_date:
+                    booked_time_slots = booked_sessions[booked_date_str] 
+                    available_time_slots = available_sessions[available_date_str]
+                    
+                    for i in range(0, len(available_time_slots)):
+                        available_time_slot = available_time_slots[i]
+                        for j in range(0, len(booked_time_slots)):
+                            booked_time_slot = booked_time_slots[j]
+                            
+                            available_datetime = convert_to_datetime(available_date_str, available_time_slot)
+                            booked_datetime = convert_to_datetime(booked_date_str, booked_time_slot)
+                            
+                            if available_datetime < booked_datetime:
+                                if available_date_str not in earlier_sessions.keys():
+                                    hasChanges = True
+                                    earlier_sessions[available_date_str] = [available_time_slot]
+                                else:
+                                    if available_time_slot not in earlier_sessions[available_date_str]:
+                                        hasChanges = True
+                                        earlier_sessions[available_date_str].append(available_time_slot)
+
+        if hasChanges:
+            notif_msg = self.send_notification_update(field_type)
+            self.log.info(f"There are updates to {field_type.upper()} available sessions. More info here: \n{notif_msg}")
+            
+        return hasChanges
