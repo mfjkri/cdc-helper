@@ -76,9 +76,10 @@ class handler(CDCAbstract):
         if is_captcha_present:
             if solve_captcha:
                 success, _ = self.captcha_solver.solve(driver=self.driver, captcha_type="normal_captcha", force_enable=force_enabled)
-                captcha_submit_btn = selenium_common.wait_for_elem(self.driver, By.ID, "ctl00_ContentPlaceHolder1_Button1")
-                captcha_submit_btn.click()
-                if not success:
+                if success:
+                    captcha_submit_btn = selenium_common.wait_for_elem(self.driver, By.ID, "ctl00_ContentPlaceHolder1_Button1")
+                    captcha_submit_btn.click()
+                else:
                     return False
             else:
                 captcha_close_btn = selenium_common.wait_for_elem(self.driver, By.CLASS_NAME, "close")
