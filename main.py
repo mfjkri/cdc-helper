@@ -27,10 +27,7 @@ if __name__ == "__main__":
             browser_config=config["browser_config"]
         ) as cdc_handler:
         
-        
-        cdc_handler.check_if_earlier_available_sessions(Types.ETT)
-        
-        success_logging_in = False #cdc_handler.account_login()
+        success_logging_in = cdc_handler.account_login()
         monitored_types, program_config = config["monitored_types"], config["program_config"]
 
         while True and success_logging_in:
