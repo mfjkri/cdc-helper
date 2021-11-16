@@ -3,7 +3,6 @@ from typing import Any
 
 attribute_templates = [
     ["available_days", list],
-    ["available_days_in_view", list],
     ["available_times", list],
     ["available_sessions", dict],
     ["earlier_sessions", dict],
