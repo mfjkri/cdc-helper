@@ -6,7 +6,7 @@ attribute_templates = [
     ["available_days_in_view", list],
     ["available_times", list],
     ["available_sessions", dict],
-    ["earlier_available_sessions", dict],
+    ["earlier_sessions", dict],
     ["booked_sessions", dict],
     ["lesson_name", str]
 ]
