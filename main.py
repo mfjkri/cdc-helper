@@ -19,9 +19,19 @@ if __name__ == "__main__":
 
     utils.clear_directory("temp/", log)
 
-    with handler(login_credentials=config["cdc_login_credentials"], captcha_solver=captcha_solver, log=log, browser_type="firefox", headless=False) as cdc_handler:
-        success_logging_in = cdc_handler.account_login()
-        monitored_types = config["monitored_types"]
+    with handler(
+            login_credentials=config["cdc_login_credentials"], 
+            captcha_solver=captcha_solver, 
+            log=log, 
+            notification_manager=notification_manager, 
+            browser_config=config["browser_config"]
+        ) as cdc_handler:
+        
+        
+        cdc_handler.check_if_earlier_available_sessions(Types.ETT)
+        
+        success_logging_in = False #cdc_handler.account_login()
+        monitored_types, program_config = config["monitored_types"], config["program_config"]
 
         while True and success_logging_in:
             # Step 2: Get booking information
@@ -46,7 +56,7 @@ if __name__ == "__main__":
                 if cdc_handler.open_etrial_test_book_page():
                     cdc_handler.get_all_session_date_times(field_type=Types.ETT)
                     cdc_handler.get_all_available_sessions(field_type=Types.ETT)
-                    # TODO: Notify user if earlier sessions are available
+                    cdc_handler.check_if_earlier_available_sessions(Types.ETT)
                 else:
                     log.debug("User does not have ETT as an available option.")
             
@@ -54,7 +64,7 @@ if __name__ == "__main__":
                 if cdc_handler.open_theory_test_booking_page(field_type=Types.BTT):
                     cdc_handler.get_all_session_date_times(field_type=Types.BTT)
                     cdc_handler.get_all_available_sessions(field_type=Types.BTT)
-                    # TODO: Notify user if earlier sessions are available
+                    cdc_handler.check_if_earlier_available_sessions(Types.BTT)
                 else:
                     log.debug("User does not have BTT as an available option.")
                     
@@ -62,15 +72,17 @@ if __name__ == "__main__":
                 if cdc_handler.open_theory_test_booking_page(field_type=Types.RTT):
                     cdc_handler.get_all_session_date_times(field_type=Types.RTT)
                     cdc_handler.get_all_available_sessions(field_type=Types.RTT)
-                    # TODO: Notify user if earlier sessions are available
+                    cdc_handler.check_if_earlier_available_sessions(Types.RTT)
                 else:
                     log.debug("User does not have RTT as an available option.")
                     
-            # TODO: Add more checks (RTT, PT)
+            # TODO: Add more checks (SIMULATOR, PT)
 
-            print(cdc_handler)
-            time.sleep(config["refresh_rate"])
-            break
+            log.info(cdc_handler)
+            if program_config["refresh_rate"]:
+                time.sleep(program_config["refresh_rate"])
+            else:
+                break
 
     
         cdc_handler.account_logout()
