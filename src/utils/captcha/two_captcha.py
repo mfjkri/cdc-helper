@@ -65,7 +65,7 @@ class Captcha:
                 image_file.close()
             
             success, status_msg = self._solve_captcha(
-                solve_callback=lambda:self.solver.normal(captcha_image_filepath),
+                solve_callback=lambda:self.solver.normal(captcha_image_filepath, caseSensitive=True, minLength=6, maxLength=6),
                 result_callback=lambda result:captcha_input.send_keys(str(result["code"])),
                 debug_enabled=debug_enabled
             )
