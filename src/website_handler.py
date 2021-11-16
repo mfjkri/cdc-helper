@@ -64,6 +64,13 @@ class handler(CDCAbstract):
             
     def __str__(self):
         return super().__str__()
+
+    def check_call_depth(self, call_depth:int):
+        if call_depth > 4:
+            self.account_logout()
+            self.account_login()
+            return False
+        return True
     
     def check_access_rights(self, webpage_name:str):
         if "Alert.aspx" in self.driver.current_url:
@@ -71,7 +78,7 @@ class handler(CDCAbstract):
             return False
         return True
         
-    def dismiss_normal_captcha(self, solve_captcha:bool=False, force_enabled:bool=False):
+    def dismiss_normal_captcha(self, solve_captcha:bool=False, secondary_alert_timeout:int=5, force_enabled:bool=False):
         is_captcha_present = selenium_common.is_elem_present(self.driver, By.ID, "ctl00_ContentPlaceHolder1_CaptchaImg", timeout=5)
         if is_captcha_present:
             if solve_captcha:
@@ -90,7 +97,7 @@ class handler(CDCAbstract):
         #dismiss alert if found
         _, alert_text = selenium_common.dismiss_alert(driver=self.driver, timeout=2)   
         if "incorrect captcha" in alert_text:
-            selenium_common.dismiss_alert(driver=self.driver, timeout=5)   
+            selenium_common.dismiss_alert(driver=self.driver, timeout=secondary_alert_timeout)   
             self.log.info("Normal captcha failed for opening theory test booking page.")
             return False  
         return True
@@ -162,11 +169,13 @@ class handler(CDCAbstract):
                 time.sleep(1)
                 return self.account_login()
             else:
+                self.logged_in = True
                 return True
         
     def account_logout(self):
         self._open_index("NewPortal/logOut.aspx?PageName=Logout")
         self.log.info("Logged out.")
+        self.logged_in = False
         
     def open_booking_overview(self):
         self._open_index("NewPortal/Booking/StatementBooking.aspx")
@@ -209,21 +218,25 @@ class handler(CDCAbstract):
                             selected_booked_sessions.update({td_cells[0].text: [f"{td_cells[2].text} - {td_cells[3].text}"]})
                         else:
                             selected_booked_sessions[td_cells[0].text].append(f"{td_cells[2].text} - {td_cells[3].text}")
-                
-    def open_etrial_test_book_page(self):
+    
+    def open_etrial_test_book_page(self, call_depth:int=0):
+        if not self.check_call_depth(call_depth):
+            call_depth = 0
         self._open_index("NewPortal/Booking/BookingETrial.aspx", sleep_delay=1)
 
         if self.check_access_rights("Booking E-trial Test"):
             course_data = self.get_course_data()
             if self.select_course_from_name(course_data, "E-Trial Test"):
-                if self.dismiss_normal_captcha(True):
+                if self.dismiss_normal_captcha(True, secondary_alert_timeout=1):
                     time.sleep(0.5)
                     return True
                 else:
-                    return self.open_etrial_test_book_page()
+                    return self.open_etrial_test_book_page(call_depth=call_depth+1)
         return False 
         
-    def open_theory_test_booking_page(self, field_type:str):
+    def open_theory_test_booking_page(self, field_type:str, call_depth:int=0):
+        if not self.check_call_depth(call_depth):
+            call_depth = 0
         self._open_index("NewPortal/Booking/BookingTT.aspx", sleep_delay=1)
 
         if self.check_access_rights("Booking Theory Test"):
@@ -234,28 +247,31 @@ class handler(CDCAbstract):
                 test_name_element = selenium_common.wait_for_elem(self.driver, By.ID, "ctl00_ContentPlaceHolder1_lblResAsmBlyDesc")
                 return (field_type == Types.BTT and "Basic Theory Test" in test_name_element.text) or (field_type == Types.RTT and "Riding Theory Test" in test_name_element.text) 
             else:
-                return self.open_theory_test_booking_page(field_type)
+                return self.open_theory_test_booking_page(field_type, call_depth=call_depth+1)
         else:
             return False
     
-    
     # TODO: Fix and test this part when I have access
-    def open_practical_test_booking_page(self):
+    def open_practical_test_booking_page(self, call_depth:int=0):
+        if not self.check_call_depth(call_depth):
+            call_depth = 0
         self._open_index("NewPortal/Booking/BookingPT.aspx", sleep_delay=1)
 
         if self.check_access_rights("Booking Practical Test"):
-            if self.dismiss_normal_captcha():
+            if self.dismiss_normal_captcha(True):
                 time.sleep(0.5)  
                 self.accept_terms_and_conditions()
 
                 return True
             else:
-                return self.open_practical_test_booking_page()
+                return self.open_practical_test_booking_page(call_depth=call_depth+1)
         else:
             return False
     
     # TODO: Fix and test this part when I have access
-    def open_practical_lessons_booking(self, field_type:str=Types.PRACTICAL):
+    def open_practical_lessons_booking(self, call_depth:int=0):
+        if not self.check_call_depth(call_depth):
+            call_depth = 0
         self._open_index("NewPortal/Booking/BookingPL.aspx", sleep_delay=1)
         
         if self.check_access_rights("Booking Practical Test"):
@@ -266,7 +282,7 @@ class handler(CDCAbstract):
                     WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.ID, 'ctl00_ContentPlaceHolder1_lblSessionNo')))
                     return True
                 else:
-                    return self.open_etrial_test_book_page()
+                    return self.open_practical_lessons_booking(call_depth=call_depth+1)
         return False
     
     def get_all_session_date_times(self, field_type:str):

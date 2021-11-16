@@ -30,7 +30,11 @@ if __name__ == "__main__":
         success_logging_in = cdc_handler.account_login()
         monitored_types, program_config = config["monitored_types"], config["program_config"]
 
-        while True and success_logging_in:
+        while True:
+            
+            while not cdc_handler.logged_in:
+                time.sleep(1)
+            
             # Step 2: Get booking information
             cdc_handler.open_booking_overview()
             cdc_handler.get_booked_lesson_date_time()
