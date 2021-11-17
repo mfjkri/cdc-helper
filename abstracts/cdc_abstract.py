@@ -18,6 +18,8 @@ class Types:
     BTT = "btt"
     RTT = "rtt"
     PT = "pt"
+    
+field_types = [attr for attr in dir(Types) if not callable(getattr(Types, attr)) and not attr.startswith("__")]
 
 class CDCAbstract:
     def __init__(self, username, password, headless=False):
@@ -25,12 +27,9 @@ class CDCAbstract:
         self.password = password
         self.headless = headless
         
-        field_types = [attr for attr in dir(Types) if not callable(getattr(Types, attr)) and not attr.startswith("__")]
-        for _, field_type in enumerate(field_types):
+        for field_type in field_types:
             field_type_str = getattr(Types, field_type)
-            
-            for i in range(0, len(attribute_templates)):
-                attribute_template = attribute_templates[i]
+            for attribute_template in attribute_templates:
                 setattr(self, f"{attribute_template[0]}_{field_type_str}", attribute_template[1]())
                 
          # Simulator
@@ -57,18 +56,28 @@ class CDCAbstract:
 
         abstract_str += "\n"
         
-        field_types = [attr for attr in dir(Types) if not callable(getattr(Types, attr)) and not attr.startswith("__")]
         abstract_attr = [attr for attr in dir(self) if not callable(getattr(self, attr)) and not attr.startswith("__")]
-        for _, field_type in enumerate(field_types):
+        for field_type in field_types:
             abstract_str += f"# {str(field_type)}\n"
 
             field_type_str = getattr(Types, field_type)
-            for _, attr in enumerate(abstract_attr):
+            for attr in abstract_attr:
                 if (field_type_str in attr) and (not attr in blacklist_attr_names):
                     abstract_str += f"# {str(attr)} = {str(getattr(self, attr))}\n"
             abstract_str += "\n"
         abstract_str += "# ------------------------------------- - ------------------------------------ #"
         return abstract_str
+    
+    def reset_attributes_for_all_fieldtypes(self):
+        for field_type in field_types:
+            self.reset_attributes_with_fieldtype(getattr(Types, field_type))
+    
+    def reset_attributes_with_fieldtype(self, field_type:str):
+        self.set_attribute_with_fieldtype("available_days", field_type, [])
+        self.set_attribute_with_fieldtype("available_times", field_type, [])
+        self.set_attribute_with_fieldtype("available_sessions", field_type, {})
+        self.set_attribute_with_fieldtype("booked_sessions", field_type, {})
+        self.set_attribute_with_fieldtype("lesson_name", field_type, "")    
         
     def get_attribute(self, attribute:str):
         return getattr(self, attribute)

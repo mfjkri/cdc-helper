@@ -180,6 +180,8 @@ class handler(CDCAbstract):
     def open_booking_overview(self):
         self._open_index("NewPortal/Booking/StatementBooking.aspx")
         self._open_index("NewPortal/Booking/StatementBooking.aspx")
+        
+        self.reset_attributes_for_all_fieldtypes()
 
     def get_booked_lesson_date_time(self):
         rows = self.driver.find_elements(By.CSS_SELECTOR, "table#ctl00_ContentPlaceHolder1_gvBooked tr")
