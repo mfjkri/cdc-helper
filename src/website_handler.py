@@ -78,7 +78,7 @@ class handler(CDCAbstract):
             return False
         return True
         
-    def dismiss_normal_captcha(self, solve_captcha:bool=False, secondary_alert_timeout:int=5, force_enabled:bool=False):
+    def dismiss_normal_captcha(self, caller_identifier:str, solve_captcha:bool=False, secondary_alert_timeout:int=5, force_enabled:bool=False):
         is_captcha_present = selenium_common.is_elem_present(self.driver, By.ID, "ctl00_ContentPlaceHolder1_CaptchaImg", timeout=5)
         if is_captcha_present:
             if solve_captcha:
@@ -98,7 +98,7 @@ class handler(CDCAbstract):
         _, alert_text = selenium_common.dismiss_alert(driver=self.driver, timeout=2)   
         if "incorrect captcha" in alert_text:
             selenium_common.dismiss_alert(driver=self.driver, timeout=secondary_alert_timeout)   
-            self.log.info("Normal captcha failed for opening theory test booking page.")
+            self.log.info(f"Normal captcha failed for opening {caller_identifier} page.")
             return False  
         return True
     
@@ -227,7 +227,7 @@ class handler(CDCAbstract):
         if self.check_access_rights("Booking E-trial Test"):
             course_data = self.get_course_data()
             if self.select_course_from_name(course_data, "E-Trial Test"):
-                if self.dismiss_normal_captcha(True, secondary_alert_timeout=1):
+                if self.dismiss_normal_captcha(caller_identifier="E-Trial Test Booking", solve_captcha=True, secondary_alert_timeout=1):
                     time.sleep(0.5)
                     return True
                 else:
@@ -240,7 +240,7 @@ class handler(CDCAbstract):
         self._open_index("NewPortal/Booking/BookingTT.aspx", sleep_delay=1)
 
         if self.check_access_rights("Booking Theory Test"):
-            if self.dismiss_normal_captcha(False):
+            if self.dismiss_normal_captcha(caller_identifier=f"{field_type.upper()} Booking", solve_captcha=False):
                 time.sleep(0.5)  
                 self.accept_terms_and_conditions()
                 
@@ -258,7 +258,7 @@ class handler(CDCAbstract):
         self._open_index("NewPortal/Booking/BookingPT.aspx", sleep_delay=1)
 
         if self.check_access_rights("Booking Practical Test"):
-            if self.dismiss_normal_captcha(True):
+            if self.dismiss_normal_captcha(caller_identifier="Practical Test Booking", solve_captcha=True):
                 time.sleep(0.5)  
                 self.accept_terms_and_conditions()
 
@@ -277,7 +277,7 @@ class handler(CDCAbstract):
         if self.check_access_rights("Booking Practical Test"):
             course_data = self.get_course_data()
             if self.select_course_from_name(course_data, "Class 2B Lesson") or self.select_course_from_idx(course_data, 1):
-                if self.dismiss_normal_captcha(True):
+                if self.dismiss_normal_captcha(caller_identifier="Practical Lessons Booking", solve_captcha=True):
                     time.sleep(0.5)
                     WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.ID, 'ctl00_ContentPlaceHolder1_lblSessionNo')))
                     return True
@@ -393,22 +393,17 @@ class handler(CDCAbstract):
         
         notif_msg += "--------------------------\n"
         notif_msg += "Booked sesssions:\n"
-        for _, booked_date_str in enumerate(booked_sessions):
+        for booked_date_str, booked_time_slots in booked_sessions.items():
             notif_msg += f"{booked_date_str}:\n"
-            
-            booked_time_slots = booked_sessions[booked_date_str]
-            for i in range (0, len(booked_time_slots)):
-                time_slot = booked_time_slots[i]
+            for time_slot in booked_time_slots:
                 notif_msg += f"  -> {time_slot}\n"
+                
         notif_msg += "--------------------------\n\n"
         
         notif_msg += "Available sesssions:\n"
-        for _, earlier_date_str in enumerate(earlier_sessions):
+        for earlier_date_str, earlier_time_slots in earlier_sessions.items():
             notif_msg += f"{earlier_date_str}:\n"
-            
-            earlier_time_slots = earlier_sessions[earlier_date_str]
-            for i in range (0, len(earlier_time_slots)):
-                time_slot = earlier_time_slots[i]
+            for time_slot in earlier_time_slots:
                 notif_msg += f"  -> {time_slot}\n"
             notif_msg += "\n"
 
@@ -425,10 +420,10 @@ class handler(CDCAbstract):
         earlier_sessions = self.get_attribute_with_fieldtype("earlier_sessions", field_type)
         hasChanges = False
         
-        for _, available_date_str in enumerate(available_sessions):
+        for available_date_str in available_sessions:
             available_date = convert_to_datetime(available_date_str)
             
-            for _, booked_date_str in enumerate(booked_sessions):
+            for booked_date_str in booked_sessions:
                 booked_date = convert_to_datetime(booked_date_str)
                 
                 if available_date < booked_date:
@@ -438,8 +433,7 @@ class handler(CDCAbstract):
                         hasChanges = True
                         earlier_sessions[available_date_str] = available_time_slots
                     else:
-                        for i in range(0, len(available_time_slots)):
-                            time_slot = available_time_slots[i]
+                        for time_slot in available_time_slots:
                             
                             if time_slot not in earlier_sessions[available_date_str]:
                                 hasChanges = True
@@ -449,11 +443,8 @@ class handler(CDCAbstract):
                     booked_time_slots = booked_sessions[booked_date_str] 
                     available_time_slots = available_sessions[available_date_str]
                     
-                    for i in range(0, len(available_time_slots)):
-                        available_time_slot = available_time_slots[i]
-                        for j in range(0, len(booked_time_slots)):
-                            booked_time_slot = booked_time_slots[j]
-                            
+                    for available_time_slot in available_time_slots:                     
+                        for booked_time_slot in booked_time_slots: 
                             available_datetime = convert_to_datetime(available_date_str, available_time_slot)
                             booked_datetime = convert_to_datetime(booked_date_str, booked_time_slot)
                             
