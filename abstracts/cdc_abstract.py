@@ -1,13 +1,18 @@
-import re
 from typing import Any
 
 attribute_templates = [
-    ["available_days", list],
-    ["available_times", list],
+    ["days_in_view", list],
+    ["times_in_view", list],
+
     ["available_sessions", dict],
-    ["earlier_sessions", dict],
+    ["available_sessions_web_elements", dict],
+    
+    ["reserved_sessions", dict],
     ["booked_sessions", dict],
-    ["lesson_name", str]
+    ["lesson_name", str],
+
+    ["earlier_sessions", dict],
+    ["cached_earlier_sessions", dict],
 ]
 
 class Types:
@@ -45,7 +50,6 @@ class CDCAbstract:
         
 
     def __str__(self):
-        #members = [attr for attr in dir(self) if not callable(getattr(self, attr)) and not attr.startswith("__")]
         blacklist_attr_names = "captcha_solver,"
         abstract_str = "# ------------------------------------- - ------------------------------------ #\n"
         abstract_str += "CDC_ABSTRACT\n"
@@ -73,11 +77,22 @@ class CDCAbstract:
             self.reset_attributes_with_fieldtype(getattr(Types, field_type))
     
     def reset_attributes_with_fieldtype(self, field_type:str):
-        self.set_attribute_with_fieldtype("available_days", field_type, [])
-        self.set_attribute_with_fieldtype("available_times", field_type, [])
-        self.set_attribute_with_fieldtype("available_sessions", field_type, {})
-        self.set_attribute_with_fieldtype("booked_sessions", field_type, {})
-        self.set_attribute_with_fieldtype("lesson_name", field_type, "")    
+        whitelisted_attributes = ["cached_earlier_sessions"]
+        for attribute_template in attribute_templates:
+            attribute = attribute_template[0]
+            if not attribute in whitelisted_attributes:
+                self.set_attribute_with_fieldtype(attribute, field_type, attribute_template[1]())
+
+        if field_type == Types.SIMULATOR:
+            self.can_book_next_simulator = True
+            self.has_auto_reserved_simulator = False
+
+        if field_type == Types.PRACTICAL:
+            self.can_book_next_practical_lesson = True
+            self.has_auto_reserved_practical = False
+
+        if field_type == Types.PT:
+            self.can_book_pt = True 
         
     def get_attribute(self, attribute:str):
         return getattr(self, attribute)
@@ -90,4 +105,3 @@ class CDCAbstract:
     
     def set_attribute_with_fieldtype(self, attribute:str, field_type:str, value:Any):
         setattr(self, f"{attribute}_{field_type}", value)
-

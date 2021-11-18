@@ -12,6 +12,7 @@ from src.utils.notifications.notification_manager import NotificationManager
 if __name__ == "__main__":
     #captcha_solver = CaptchaBypass(log=log, is_enabled=True) 
     config = utils.load_config_from_yaml_file(file_path="config.yaml")
+    program_config = config["program_config"]
 
     log = Log(directory="logs/", name="cdc-helper", config=config["log_config"])
     captcha_solver = TwoCaptcha(log=log, config=config["two_captcha_config"])
@@ -24,11 +25,12 @@ if __name__ == "__main__":
             captcha_solver=captcha_solver, 
             log=log, 
             notification_manager=notification_manager, 
-            browser_config=config["browser_config"]
+            browser_config=config["browser_config"],
+            program_config=program_config
         ) as cdc_handler:
         
         success_logging_in = cdc_handler.account_login()
-        monitored_types, program_config = config["monitored_types"], config["program_config"]
+        monitored_types = program_config["monitored_types"]
 
         while True:
             
@@ -38,6 +40,7 @@ if __name__ == "__main__":
             # Step 2: Get booking information
             cdc_handler.open_booking_overview()
             cdc_handler.get_booked_lesson_date_time()
+            cdc_handler.get_reserved_lesson_date_time()
 
             if monitored_types["practical"]:
                 if cdc_handler.open_practical_lessons_booking(field_type=Types.PRACTICAL):
