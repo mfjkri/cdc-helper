@@ -550,19 +550,24 @@ class handler(CDCAbstract):
         reserved_sessions = self.get_attribute_with_fieldtype("reserved_sessions", field_type)
         old_reserved_sessions = {}
         
-        for available_date_str, available_time_slots in available_sessions.items():
-            available_date = convert_to_datetime(available_date_str)
-            
-            for booked_date_str in booked_sessions:
-                booked_date = convert_to_datetime(booked_date_str)
+        if len(booked_sessions.keys()) > 0:
+            for available_date_str, available_time_slots in available_sessions.items():
+                available_date = convert_to_datetime(available_date_str)
                 
-                valid_booked_date = (available_date < booked_date)  or (self.reserve_for_same_day and available_date == booked_date)
-                if valid_booked_date:
-                    if available_date_str not in earlier_sessions:
-                        earlier_sessions[available_date_str] = list(available_time_slots)
+                for booked_date_str in booked_sessions:
+                    booked_date = convert_to_datetime(booked_date_str)
                     
-        cached_earlier_sessions = self.get_attribute_with_fieldtype("cached_earlier_sessions", field_type)
-        has_changes = self.check_if_same_sessions(cached_earlier_sessions, earlier_sessions)
+                    valid_booked_date = (available_date < booked_date)  or (self.reserve_for_same_day and available_date == booked_date)
+                    if valid_booked_date:
+                        if available_date_str not in earlier_sessions:
+                            earlier_sessions[available_date_str] = list(available_time_slots)
+        else:
+            self.set_attribute_with_fieldtype("earlier_sessions", field_type, dict(available_sessions))
+                    
+        has_changes = self.check_if_same_sessions(
+            self.get_attribute_with_fieldtype("cached_earlier_sessions", field_type), 
+            self.get_attribute_with_fieldtype("earlier_sessions", field_type)
+        )
         
         if has_changes:
             self.set_attribute_with_fieldtype("cached_earlier_sessions", field_type, dict(earlier_sessions))
