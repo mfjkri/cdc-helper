@@ -43,6 +43,8 @@ class handler(CDCAbstract):
         self.username = login_credentials["username"]
         self.password = login_credentials["password"]
         self.logged_in = False
+        self.notification_update_msg = ""
+        self.has_slots_reserved = False
         
         options = browser_type.lower() == "firefox" and webdriver.FirefoxOptions() or webdriver.ChromeOptions()
         if headless:
@@ -71,6 +73,11 @@ class handler(CDCAbstract):
             
     def __str__(self):
         return super().__str__()
+
+    def reset_state(self):
+        self.reset_attributes_for_all_fieldtypes()
+        self.notification_update_msg = ""
+        self.has_slots_reserved = False
     
     def is_date_in_view(self, date_str:str, field_type:str):
         return date_str in self.get_attribute_with_fieldtype("days_in_view", field_type)
@@ -97,7 +104,26 @@ class handler(CDCAbstract):
                 return_sessions_data[selected_date].append(selected_time)
                 
         return return_sessions_data
-
+    
+    def check_if_same_sessions(self, session0:Dict, session1:Dict):
+        for date_str, time_slots in session0.items():
+            if date_str not in session1:
+                return True
+            else:
+                for time_slot in time_slots:
+                    if time_slot not in session1[date_str]:
+                        return True
+        
+        for date_str, time_slots in session1.items():
+            if date_str not in session0:
+                return True
+            else:
+                for time_slot in time_slots:
+                    if time_slot not in session0[date_str]:
+                        return True
+        
+        return False
+    
     def check_call_depth(self, call_depth:int):
         if call_depth > 4:
             self.account_logout()
@@ -223,7 +249,6 @@ class handler(CDCAbstract):
         #self._open_index("NewPortal/Booking/StatementBooking.aspx")
         self._open_index("NewPortal/Booking/Dashboard.aspx")
         _, _ = selenium_common.dismiss_alert(driver=self.driver, timeout=5)   
-        self.reset_attributes_for_all_fieldtypes()
         
     def get_reserved_lesson_date_time(self):
         rows = self.driver.find_elements(By.CSS_SELECTOR, "table#ctl00_ContentPlaceHolder1_gvReserved tr")
@@ -462,35 +487,59 @@ class handler(CDCAbstract):
                     self.log.info("Reverted reservation of session successfully")
                     time.sleep(2)
                     
-    def send_notification_update_for_earlier_sessions(self, field_type:str):
+    def create_notification_update(self, field_type:str):
         earlier_sessions = self.get_attribute_with_fieldtype("earlier_sessions", field_type)
         booked_sessions = self.get_attribute_with_fieldtype("booked_sessions", field_type)
-
-        notif_msg = "\n"
+        reserved_sessions = self.get_attribute_with_fieldtype("reserved_sessions", field_type)
+        
+        notif_msg = ""
+        
+        notif_msg += "\n=======================\n"
+        notif_msg += f"{field_type.upper()} UPDATE\n"
+        notif_msg += "=======================\n\n"
         
         notif_msg += "--------------------------\n"
-        notif_msg += "Booked sesssions:\n"
+        notif_msg += "Booked sessions:\n"
         for booked_date_str, booked_time_slots in booked_sessions.items():
             notif_msg += f"{booked_date_str}:\n"
             for time_slot in booked_time_slots:
                 notif_msg += f"  -> {time_slot}\n"
-                
+        notif_msg += "--------------------------\n"
+        
+        notif_msg += "--------------------------\n"
+        notif_msg += "Reserved sessions:\n"
+        for reserved_date_str, reserved_time_slots in reserved_sessions.items():
+            notif_msg += f"{reserved_date_str}:\n"
+            for time_slot in reserved_time_slots:
+                self.has_slots_reserved = True
+                notif_msg += f"  -> {time_slot}\n"
         notif_msg += "--------------------------\n\n"
         
-        notif_msg += "Available sesssions:\n"
+        notif_msg += "Available sessions:\n"
         for earlier_date_str, earlier_time_slots in earlier_sessions.items():
             notif_msg += f"{earlier_date_str}:\n"
             for time_slot in earlier_time_slots:
                 notif_msg += f"  -> {time_slot}\n"
             notif_msg += "\n"
+        notif_msg += "\n"
 
-        self.notification_manager.send_notification_all(
-            title=f"{field_type.upper()}: UPDATE",
-            msg=notif_msg
-        )
+        self.notification_update_msg += notif_msg
         
         return notif_msg
     
+    def flush_notification_update(self): 
+        if self.notification_update_msg != "":
+            self.notification_manager.send_notification_all(
+                title=f"{datetime.datetime.now()}",
+                msg=self.notification_update_msg
+            )
+            
+            if self.has_slots_reserved:
+                self.notification_manager.send_notification_all(
+                    title=f"RESERVED SLOTS DETECTED",
+                    msg="You have outstanding slots reserved! Please log in to the website and confirm these reservations else they will be forfeited."
+                )   
+        self.reset_state()
 
     def check_if_earlier_available_sessions(self, field_type:str):
         available_sessions = self.get_attribute_with_fieldtype("available_sessions", field_type)    
@@ -501,126 +550,28 @@ class handler(CDCAbstract):
         reserved_sessions = self.get_attribute_with_fieldtype("reserved_sessions", field_type)
         old_reserved_sessions = {}
         
-        for available_date_str in available_sessions:
+        for available_date_str, available_time_slots in available_sessions.items():
             available_date = convert_to_datetime(available_date_str)
             
             for booked_date_str in booked_sessions:
                 booked_date = convert_to_datetime(booked_date_str)
                 
-                if (available_date < booked_date):
-                    available_time_slots = available_sessions[available_date_str]
-                    
+                valid_booked_date = (available_date < booked_date)  or (self.reserve_for_same_day and available_date == booked_date)
+                if valid_booked_date:
                     if available_date_str not in earlier_sessions:
-                        earlier_sessions[available_date_str] = available_time_slots
-                    else:
-                        for available_time_slot in available_time_slots:
-                            if available_time_slot not in earlier_sessions[available_date_str]:
-                                earlier_sessions[available_date_str].append(available_time_slot)
+                        earlier_sessions[available_date_str] = list(available_time_slots)
                     
-                elif self.reserve_for_same_day and available_date == booked_date:
-                    booked_time_slots = booked_sessions[booked_date_str] 
-                    available_time_slots = available_sessions[available_date_str]
-                    
-                    for available_time_slot in available_time_slots:                     
-                        for booked_time_slot in booked_time_slots: 
-                            available_datetime = convert_to_datetime(available_date_str, available_time_slot)
-                            booked_datetime = convert_to_datetime(booked_date_str, booked_time_slot)
-                            
-                            if available_datetime < booked_datetime:
-                                if available_date_str not in earlier_sessions:
-                                    earlier_sessions[available_date_str] = [available_time_slot]
-                                else:
-                                    if available_time_slot not in earlier_sessions[available_date_str]:
-                                        earlier_sessions[available_date_str].append(available_time_slot)
-
-        
-        has_changes = False
         cached_earlier_sessions = self.get_attribute_with_fieldtype("cached_earlier_sessions", field_type)
-
-        for cached_earlier_date_str, cached_earlier_date in cached_earlier_sessions.items():
-            if cached_earlier_date_str not in earlier_sessions:
-                has_changes = True
-                break
-            else:
-                for cached_earlier_time_slot in cached_earlier_date:
-                    if cached_earlier_time_slot not in earlier_sessions[cached_earlier_date_str]:
-                        has_changes = True
-                        break
-        
-        if not has_changes:
-            for earlier_date_str, earlier_date in earlier_sessions.items():
-                if earlier_date_str not in cached_earlier_sessions:
-                    has_changes = True
-                    break
-                else:
-                    for earlier_time_slot in earlier_date:
-                        if earlier_time_slot not in cached_earlier_sessions[earlier_date_str]:
-                            has_changes = True
-                            break
+        has_changes = self.check_if_same_sessions(cached_earlier_sessions, earlier_sessions)
         
         if has_changes:
             self.set_attribute_with_fieldtype("cached_earlier_sessions", field_type, dict(earlier_sessions))
             
-            notif_msg = self.send_notification_update_for_earlier_sessions(field_type)
+            notif_msg = self.create_notification_update(field_type)
             self.log.info(f"There are updates to {field_type.upper()} available sessions. More info here: \n{notif_msg}")
             
             if self.auto_reserve:
                 pass
-                slots_to_reserve = self.program_config["slots_per_type"][field_type]
-                
-                
-                
-                # outdated reserved slots
-                # -> they are in view and can be unreserved 
-                #       -> no CHANGE to slots_to_reserve
-                # -> they are NOT in view and CANNOT be unreserved
-                #       -> -1 from slots_to_reserve
-                
-                
-                
-                
-                
-                for reserved_date_str, reserved_date in reserved_sessions.items():
-                    for reserved_time_slot in reserved_date:
-                        slots_to_reserve -= 1
-                        
-                if slots_to_reserve > 0:
-                    pass #print("")
-                # if "total_currently_reserved_slots" in reserved_earlier_sessions:
-                #     slots_to_reserve -= reserved_earlier_sessions["total_currently_reserved_slots"]
-                    
-                # if slots_to_reserve and slots_to_reserve > 0:
-                #     slots_to_be_reserved = []
-                #     for i, earlier_session_date in enumerate(earlier_sessions):
-                #         for earlier_session_time in earlier_sessions[earlier_session_date]:
-                #             if len(slots_to_be_reserved) < slots_to_reserve:
-                #                 self.log.info(i, earlier_session_date, earlier_session_time)
-                #                 slots_to_be_reserved.append(
-                #                     {
-                #                         "input_element" : available_sessions_web_elements[f"{earlier_session_date} : {earlier_session_time}"],
-                #                         "earlier_session_date": earlier_session_date,
-                #                         "earlier_session_time": earlier_session_time
-                #                     }
-                #                 )
-                    
-                #     for idx, slot_to_be_reserved in enumerate(slots_to_be_reserved):
-                #         slot_to_be_reserved["input_element"].click()
-                #         reserved_session_date, reserved_session_time = slot_to_be_reserved["earlier_session_date"], slot_to_be_reserved["earlier_session_time"]
-                        
-                #         alert_found, alert_text = selenium_common.dismiss_alert(driver=self.driver, timeout=2)
-                        
-                #         if alert_found:
-                #             self.log.info(f"Encountered an issue while reserving slot #{idx+1} for {field_type.upper()}.")
-                #             self.notification_manager.send_notification_all(
-                #                 title=f"ISSUE WHILE RESERVING FOR {field_type.upper()}",
-                #                 msg=f""
-                #             )
-                #             break
-                #         else:
-                #             if reserved_session_date not in reserved_earlier_sessions:
-                #                 reserved_earlier_sessions[reserved_session_date] = [reserved_session_time]
-                #             else:
-                #                 reserved_earlier_sessions[reserved_session_date].append(reserved_session_time)
-            
+
     
         return has_changes

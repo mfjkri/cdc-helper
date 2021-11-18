@@ -37,7 +37,6 @@ if __name__ == "__main__":
             while not cdc_handler.logged_in:
                 time.sleep(1)
             
-            # Step 2: Get booking information
             cdc_handler.open_booking_overview()
             cdc_handler.get_booked_lesson_date_time()
             cdc_handler.get_reserved_lesson_date_time()
@@ -81,12 +80,14 @@ if __name__ == "__main__":
                     log.debug("User does not have RTT as an available option.")
                     
             # TODO: Add more checks (SIMULATOR, PT)
-
+            
             log.info(cdc_handler)
+            cdc_handler.flush_notification_update()
+
             if program_config["refresh_rate"]:
                 time.sleep(program_config["refresh_rate"])
             else:
                 break
 
-    
         cdc_handler.account_logout()
+        cdc_handler.driver.quit()
