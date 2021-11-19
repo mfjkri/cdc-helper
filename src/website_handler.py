@@ -650,7 +650,6 @@ class handler(CDCAbstract):
                         if insufficient_funds:
                             break
             
-            #TODO: Why does it keep updating after reserving
             self.set_attribute_with_fieldtype("reserved_sessions", field_type, dict(reserved_sessions))
             self.set_attribute_with_fieldtype("available_sessions", field_type, dict(available_sessions))
             self.update_earlier_sessions(field_type)

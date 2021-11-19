@@ -50,8 +50,7 @@ if __name__ == "__main__":
                         cdc_handler.get_all_session_date_times(field_type=Types.PRACTICAL)
                         cdc_handler.get_all_available_sessions(field_type=Types.PRACTICAL)
                         if cdc_handler.can_book_next_practical_lesson:
-                            log.info("Earlier date available!") 
-                            # TODO: Notify user if earlier sessions are available
+                            cdc_handler.check_if_earlier_available_sessions(Types.ETT)
                 else:
                     pass # No course found
                 
