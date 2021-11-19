@@ -97,11 +97,11 @@ class handler(CDCAbstract):
         return_sessions_data = {}
         
         for selected_datetime in selected_datetimes:
-            selected_date, selected_time = selected_datetime[0], selected_datetime[1]
-            if selected_date not in return_sessions_data:
-                return_sessions_data[selected_date] = [selected_time]
+            selected_date_str, selected_time_slot = selected_datetime[0], selected_datetime[1]
+            if selected_date_str not in return_sessions_data:
+                return_sessions_data[selected_date_str] = [selected_time_slot]
             else:
-                return_sessions_data[selected_date].append(selected_time)
+                return_sessions_data[selected_date_str].append(selected_time_slot)
                 
         return return_sessions_data
     
@@ -273,9 +273,9 @@ class handler(CDCAbstract):
                         reserved_sessions = self.get_attribute_with_fieldtype("reserved_sessions", field_type)
                         
                         if td_cells[0].text not in reserved_sessions:
-                            reserved_sessions.update({td_cells[0].text: [f"{td_cells[2].text} - {td_cells[3].text}"]})
+                            reserved_sessions.update({td_cells[0].text: [f"{td_cells[2].text[:-3]} - {td_cells[3].text[:-3]}"]})
                         else:
-                            reserved_sessions[td_cells[0].text].append(f"{td_cells[2].text} - {td_cells[3].text}")
+                            reserved_sessions[td_cells[0].text].append(f"{td_cells[2].text[:-3]} - {td_cells[3].text[:-3]}")
 
     def get_booked_lesson_date_time(self):
         rows = self.driver.find_elements(By.CSS_SELECTOR, "table#ctl00_ContentPlaceHolder1_gvBooked tr")
@@ -311,9 +311,9 @@ class handler(CDCAbstract):
                         booked_sessions = self.get_attribute_with_fieldtype("booked_sessions", field_type)
                         
                         if td_cells[0].text not in booked_sessions:
-                            booked_sessions.update({td_cells[0].text: [f"{td_cells[2].text} - {td_cells[3].text}"]})
+                            booked_sessions.update({td_cells[0].text: [f"{td_cells[2].text[:-3]} - {td_cells[3].text[:-3]}"]})
                         else:
-                            booked_sessions[td_cells[0].text].append(f"{td_cells[2].text} - {td_cells[3].text}")
+                            booked_sessions[td_cells[0].text].append(f"{td_cells[2].text[:-3]} - {td_cells[3].text[:-3]}")
     
     def open_etrial_test_book_page(self, call_depth:int=0):
         if not self.check_call_depth(call_depth):
@@ -418,13 +418,14 @@ class handler(CDCAbstract):
                 
                 days_in_view = self.get_attribute_with_fieldtype("days_in_view", field_type)
                 times_in_view = self.get_attribute_with_fieldtype("times_in_view", field_type)   
+                web_elements_in_view = self.get_attribute_with_fieldtype("web_elements_in_view", field_type)
                 
                 available_session_date = days_in_view[row]
                 available_session_time = times_in_view[column]
+                web_elements_in_view.update({f"{available_session_date} : {available_session_time}" : element_id})
 
                 if "Images1.gif" in input_element_src:
                     available_sessions = self.get_attribute_with_fieldtype("available_sessions", field_type)
-                    available_sessions_web_elements = self.get_attribute_with_fieldtype("available_sessions_web_elements", field_type)
                     
                     last_practical_input_element = (
                         input_element if field_type == Types.PRACTICAL else last_practical_input_element
@@ -434,9 +435,6 @@ class handler(CDCAbstract):
                         available_sessions.update({available_session_date: [available_session_time]})
                     else:
                         available_sessions[available_session_date].append(available_session_time)
-                    
-                    available_sessions_web_elements.update({f"{available_session_date} : {available_session_time}" : input_element})
-                
                 elif "Images2.gif" in input_element_src:
                     pass
                 elif "Images3.gif" in input_element_src:
@@ -526,7 +524,29 @@ class handler(CDCAbstract):
         self.notification_update_msg += notif_msg
         
         return notif_msg
-    
+        
+    def update_earlier_sessions(self, field_type:str):
+        available_sessions = self.get_attribute_with_fieldtype("available_sessions", field_type)    
+
+        booked_sessions = self.get_attribute_with_fieldtype("booked_sessions", field_type)
+        earlier_sessions = {}
+        
+        if len(booked_sessions.keys()) > 0:
+            for available_date_str, available_time_slots in available_sessions.items():
+                available_date = convert_to_datetime(available_date_str)
+                
+                for booked_date_str in booked_sessions:
+                    booked_date = convert_to_datetime(booked_date_str)
+                    
+                    valid_booked_date = (available_date < booked_date)  or (self.reserve_for_same_day and available_date == booked_date)
+                    if valid_booked_date:
+                        if available_date_str not in earlier_sessions:
+                            earlier_sessions[available_date_str] = list(available_time_slots)
+                            
+            self.set_attribute_with_fieldtype("earlier_sessions", field_type, dict(earlier_sessions))
+        else:
+            self.set_attribute_with_fieldtype("earlier_sessions", field_type, dict(available_sessions))
+
     def flush_notification_update(self): 
         if self.notification_update_msg != "":
             self.notification_manager.send_notification_all(
@@ -540,43 +560,104 @@ class handler(CDCAbstract):
                     msg="You have outstanding slots reserved! Please log in to the website and confirm these reservations else they will be forfeited."
                 )   
         self.reset_state()
-
+        
     def check_if_earlier_available_sessions(self, field_type:str):
-        available_sessions = self.get_attribute_with_fieldtype("available_sessions", field_type)    
-        available_sessions_web_elements = self.get_attribute_with_fieldtype("available_sessions_web_elements", field_type)
+        self.update_earlier_sessions(field_type)
 
-        booked_sessions = self.get_attribute_with_fieldtype("booked_sessions", field_type)
+        available_sessions = self.get_attribute_with_fieldtype("available_sessions", field_type)    
+        web_elements_in_view = self.get_attribute_with_fieldtype("web_elements_in_view", field_type)
+
         earlier_sessions = self.get_attribute_with_fieldtype("earlier_sessions", field_type)
         reserved_sessions = self.get_attribute_with_fieldtype("reserved_sessions", field_type)
-        old_reserved_sessions = {}
-        
-        if len(booked_sessions.keys()) > 0:
-            for available_date_str, available_time_slots in available_sessions.items():
-                available_date = convert_to_datetime(available_date_str)
-                
-                for booked_date_str in booked_sessions:
-                    booked_date = convert_to_datetime(booked_date_str)
                     
-                    valid_booked_date = (available_date < booked_date)  or (self.reserve_for_same_day and available_date == booked_date)
-                    if valid_booked_date:
-                        if available_date_str not in earlier_sessions:
-                            earlier_sessions[available_date_str] = list(available_time_slots)
-        else:
-            self.set_attribute_with_fieldtype("earlier_sessions", field_type, dict(available_sessions))
-                    
-        has_changes = self.check_if_same_sessions(
-            self.get_attribute_with_fieldtype("cached_earlier_sessions", field_type), 
-            self.get_attribute_with_fieldtype("earlier_sessions", field_type)
-        )
+        has_changes = self.check_if_same_sessions(self.get_attribute_with_fieldtype("cached_earlier_sessions", field_type),  earlier_sessions)
         
         if has_changes:
-            self.set_attribute_with_fieldtype("cached_earlier_sessions", field_type, dict(earlier_sessions))
-            
-            notif_msg = self.create_notification_update(field_type)
-            self.log.info(f"There are updates to {field_type.upper()} available sessions. More info here: \n{notif_msg}")
-            
             if self.auto_reserve:
-                pass
+                number_of_slots_needed = self.program_config["slots_per_type"][field_type] 
+                earliest_sessions_to_be_reserved = self.get_earliest_time_slots(earlier_sessions, number_of_slots_needed)
+                to_be_removed_reservations = {}
+                
+                for reserved_date_str, reserved_time_slots in reserved_sessions.items():
+                    if self.is_date_in_view(reserved_date_str, field_type):
+                        reserved_date = convert_to_datetime(reserved_date_str)
+                        
+                        reserved_date_is_earliest = False
+                        
+                        for earliest_date_str in earliest_sessions_to_be_reserved:
+                            earliest_date = convert_to_datetime(earliest_date_str)
+                            if reserved_date <= earliest_date:
+                                number_of_slots_needed -= len(reserved_time_slots)
+                                reserved_date_is_earliest = True
+                                break
+                        
+                        if not reserved_date_is_earliest:
+                            to_be_removed_reservations.update({reserved_date_str : []})
+                            for reserved_time_slot in reserved_time_slots:
+                                input_element_id = web_elements_in_view[f"{reserved_date_str} : {reserved_time_slot}"]
+                                input_element = selenium_common.wait_for_elem(self.driver, By.ID, input_element_id)
+                                input_element.click()
+                                self.log.info(f"Attempting to remove reservation from {field_type.upper()} slot on {reserved_date_str} : {reserved_time_slot}.")
 
+                                alert_found, alert_text = selenium_common.dismiss_alert(self.driver, timeout=10)
+                                if alert_found:
+                                    self.log.error(f"Failed to unreserve a {field_type.upper()} slot on {reserved_date_str} : {reserved_time_slot}. Reason: {alert_text}")
+                                    number_of_slots_needed -= 1
+                                    break
+                                else:
+                                    to_be_removed_reservations[reserved_date_str].append(reserved_time_slot)
+                    else:
+                        number_of_slots_needed -= len(reserved_time_slots)
+                
+                for date_str, time_slots in to_be_removed_reservations.items():
+                    if date_str not in available_sessions:
+                        available_sessions.update({date_str : list(time_slots)})
+                        
+                    for time_slot in time_slots:
+                        reserved_sessions[date_str].remove(time_slot)
+                        available_sessions[date_str].append(time_slot)
+                    if len(reserved_sessions[date_str]) == 0:
+                        del reserved_sessions[date_str]   
+                
+                if number_of_slots_needed > 0:
+                    self.log.info(f"Number of slots left to reserve for {field_type.upper} is: {number_of_slots_needed}")
+                    insufficient_funds = False
+                    earliest_sessions_to_be_reserved = self.get_earliest_time_slots(earlier_sessions, number_of_slots_needed)
+                    
+                    for date_str, time_slots in earliest_sessions_to_be_reserved.items():
+                        for time_slot in time_slots:
+                            input_element_id = web_elements_in_view[f"{date_str} : {time_slot}"]
+                            input_element = selenium_common.wait_for_elem(self.driver, By.ID, input_element_id)
+                            input_element.click()
+                            self.log.info(f"Attempting to reserve a {field_type.upper()} slot on {date_str} : {time_slot}.")
+
+                            alert_found, alert_text = selenium_common.dismiss_alert(self.driver, timeout=10)
+                            if alert_found:
+                                self.log.error(f"Failed to reserve a {field_type.upper()} slot on {date_str} : {time_slot}. Reason: {alert_text}")
+                                if "Store Value:" in alert_text:
+                                    insufficient_funds = True
+                                    break
+                            else:
+                                if date_str not in reserved_sessions:
+                                    reserved_sessions[date_str] = [time_slot]
+                                else:
+                                    reserved_sessions[date_str].append(time_slot)
+                                
+                                available_sessions[date_str].remove(time_slot)
+                                if len(available_sessions[date_str]) == 0:
+                                    del available_sessions[date_str]
+                        
+                        if insufficient_funds:
+                            break
+            
+            #TODO: Why does it keep updating after reserving
+            self.set_attribute_with_fieldtype("reserved_sessions", field_type, dict(reserved_sessions))
+            self.set_attribute_with_fieldtype("available_sessions", field_type, dict(available_sessions))
+            self.update_earlier_sessions(field_type)
+            self.set_attribute_with_fieldtype("cached_earlier_sessions", field_type, 
+                dict(self.get_attribute_with_fieldtype("earlier_sessions", field_type)))
+            notif_msg = self.create_notification_update(field_type)
+            self.log.info(f"There are updates to {field_type.upper()} available sessions. More info here: \n{notif_msg}")  
+                    
     
         return has_changes

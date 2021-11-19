@@ -2,10 +2,10 @@ from typing import Any
 
 attribute_templates = [
     ["days_in_view", list],
+    ["web_elements_in_view", dict],
     ["times_in_view", list],
 
     ["available_sessions", dict],
-    ["available_sessions_web_elements", dict],
     
     ["reserved_sessions", dict],
     ["booked_sessions", dict],
