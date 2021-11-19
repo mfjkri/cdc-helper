@@ -84,7 +84,10 @@ if __name__ == "__main__":
             cdc_handler.flush_notification_update()
 
             if program_config["refresh_rate"]:
+                sleep_time = program_config["refresh_rate"]
+                cdc_handler.log.info(f"Program now halting for {sleep_time}s...")
                 time.sleep(program_config["refresh_rate"])
+                cdc_handler.log.info(f"Program now resuming! Cached log in ?: {cdc_handler.logged_in}")
             else:
                 break
 
