@@ -1,5 +1,7 @@
 #!/media/Programming/repos/py/_selenium/CDC_HELPER/venv/bin/python
-import time
+import time, sys, os
+sys.path.insert(0, os.getcwd())
+
 from src.website_handler import handler, Types
 
 from src.utils.common import utils
