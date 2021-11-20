@@ -1,19 +1,13 @@
-from enum import Enum
-from typing import Tuple
-from pydub import AudioSegment
+import os, time, requests, tempfile
 import speech_recognition as sr
-import tempfile
-import requests
-import os
-import time
+from pydub import AudioSegment
 
+import selenium
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
-import selenium
 
 from src.utils.log import Log
-from src.utils.common import selenium_common
-from src.utils.common import utils
+from src.utils.common import selenium_common, utils
 
 class NoCaptchaException(Exception):
     def __init__(self, error, *args: object) -> None:

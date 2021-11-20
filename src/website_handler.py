@@ -1,5 +1,5 @@
 import time, datetime
-from typing import Dict, List
+from typing import Dict, List, Union
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -45,6 +45,15 @@ class handler(CDCAbstract):
         self.logged_in = False
         self.notification_update_msg = ""
         self.has_slots_reserved = False
+        
+        self.opening_booking_page_callback_map = {
+            Types.ETT : self.open_etrial_test_booking_page,
+            Types.BTT : self.open_theory_test_booking_page,
+            Types.RTT : self.open_theory_test_booking_page,
+            Types.PRACTICAL : self.open_practical_lessons_booking_page,
+            Types.SIMULATOR : self.open_simulator_lessons_booking_page,
+            Types.PT : self.open_practical_test_booking_page,
+        }
         
         options = browser_type.lower() == "firefox" and webdriver.FirefoxOptions() or webdriver.ChromeOptions()
         if headless:
@@ -204,7 +213,7 @@ class handler(CDCAbstract):
         course_data["course_selection"].select_by_index(course_idx)
         return course_data["available_courses"][course_idx]
         
-    def open_home_page(self, sleep_delay = None):
+    def open_home_page(self, sleep_delay:Union[int,None]=None):
         self.driver.get(self.home_url)
         assert "ComfortDelGro" in self.driver.title
         
@@ -223,8 +232,7 @@ class handler(CDCAbstract):
         learner_id_input.send_keys(self.username)
         password_input.send_keys(self.password)
 
-        # wait for user to solve recaptcha
-        success, status_msg = self.captcha_solver.solve(driver=self.driver, captcha_type="recaptcha_v2")
+        success, _ = self.captcha_solver.solve(driver=self.driver, captcha_type="recaptcha_v2")
         if success:
             login_btn = selenium_common.wait_for_elem(self.driver, By.ID, "BTNSERVICE2")
             login_btn.click()
@@ -245,10 +253,8 @@ class handler(CDCAbstract):
         self.logged_in = False
         
     def open_booking_overview(self):
-        #self._open_index("NewPortal/Booking/StatementBooking.aspx")
-        #self._open_index("NewPortal/Booking/StatementBooking.aspx")
-        self._open_index("NewPortal/Booking/Dashboard.aspx")
-        _, _ = selenium_common.dismiss_alert(driver=self.driver, timeout=5)   
+        self._open_index("NewPortal/Booking/Dashboard.aspx") #"NewPortal/Booking/StatementBooking.aspx"
+        selenium_common.dismiss_alert(driver=self.driver, timeout=5)   
         
     def get_reserved_lesson_date_time(self):
         rows = self.driver.find_elements(By.CSS_SELECTOR, "table#ctl00_ContentPlaceHolder1_gvReserved tr")
@@ -314,8 +320,11 @@ class handler(CDCAbstract):
                             booked_sessions.update({td_cells[0].text: [f"{td_cells[2].text[:-3]} - {td_cells[3].text[:-3]}"]})
                         else:
                             booked_sessions[td_cells[0].text].append(f"{td_cells[2].text[:-3]} - {td_cells[3].text[:-3]}")
-    
-    def open_etrial_test_book_page(self, call_depth:int=0):
+        
+    def open_field_type_booking_page(self, field_type:str):
+        return self.opening_booking_page_callback_map[field_type](field_type)
+
+    def open_etrial_test_booking_page(self, field_type:str, call_depth:int=0):
         if not self.check_call_depth(call_depth):
             call_depth = 0
         self._open_index("NewPortal/Booking/BookingETrial.aspx", sleep_delay=1)
@@ -327,7 +336,7 @@ class handler(CDCAbstract):
                     time.sleep(0.5)
                     return True
                 else:
-                    return self.open_etrial_test_book_page(call_depth=call_depth+1)
+                    return self.open_etrial_test_booking_page(field_type, call_depth+1)
         return False 
         
     def open_theory_test_booking_page(self, field_type:str, call_depth:int=0):
@@ -343,29 +352,12 @@ class handler(CDCAbstract):
                 test_name_element = selenium_common.wait_for_elem(self.driver, By.ID, "ctl00_ContentPlaceHolder1_lblResAsmBlyDesc")
                 return (field_type == Types.BTT and "Basic Theory Test" in test_name_element.text) or (field_type == Types.RTT and "Riding Theory Test" in test_name_element.text) 
             else:
-                return self.open_theory_test_booking_page(field_type, call_depth=call_depth+1)
+                return self.open_theory_test_booking_page(field_type, call_depth+1)
         else:
             return False
     
     # TODO: Fix and test this part when I have access
-    def open_practical_test_booking_page(self, call_depth:int=0):
-        if not self.check_call_depth(call_depth):
-            call_depth = 0
-        self._open_index("NewPortal/Booking/BookingPT.aspx", sleep_delay=1)
-
-        if self.check_access_rights("NewPortal/Booking/BookingPT.aspx"):
-            if self.dismiss_normal_captcha(caller_identifier="Practical Test Booking", solve_captcha=True):
-                time.sleep(0.5)  
-                self.accept_terms_and_conditions()
-
-                return True
-            else:
-                return self.open_practical_test_booking_page(call_depth=call_depth+1)
-        else:
-            return False
-    
-    # TODO: Fix and test this part when I have access
-    def open_practical_lessons_booking(self, call_depth:int=0):
+    def open_practical_lessons_booking_page(self, field_type:str, call_depth:int=0):
         if not self.check_call_depth(call_depth):
             call_depth = 0
         self._open_index("NewPortal/Booking/BookingPL.aspx", sleep_delay=1)
@@ -378,8 +370,33 @@ class handler(CDCAbstract):
                     WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.ID, 'ctl00_ContentPlaceHolder1_lblSessionNo')))
                     return True
                 else:
-                    return self.open_practical_lessons_booking(call_depth=call_depth+1)
+                    return self.open_practical_lessons_booking_page(field_type, call_depth+1)
         return False
+    
+    # TODO: Add open_simulator_lessons_booking when I have access
+    def open_simulator_lessons_booking_page(self, field_type:str, call_depth:int=0):
+        pass
+    
+    # TODO: Fix and test this part when I have access
+    def open_practical_test_booking_page(self, field_type:str, call_depth:int=0):
+        if "REVISION" in self.lesson_name_practical:
+            self.log.info("No practical lesson available for user, seems user has completed practical lessons")
+            return False
+        
+        if not self.check_call_depth(call_depth):
+            call_depth = 0
+        self._open_index("NewPortal/Booking/BookingPT.aspx", sleep_delay=1)
+
+        if self.check_access_rights("NewPortal/Booking/BookingPT.aspx"):
+            if self.dismiss_normal_captcha(caller_identifier="Practical Test Booking", solve_captcha=True):
+                time.sleep(0.5)  
+                self.accept_terms_and_conditions()
+
+                return True
+            else:
+                return self.open_practical_test_booking_page(field_type, call_depth+1)
+        else:
+            return False
     
     def get_all_session_date_times(self, field_type:str):
         for row in self.driver.find_elements(By.CSS_SELECTOR, "table#ctl00_ContentPlaceHolder1_gvLatestav tr"):
@@ -398,8 +415,6 @@ class handler(CDCAbstract):
                 selected_days_array.append(td_cells[0].text)
     
     def get_all_available_sessions(self, field_type:str):
-        # iterate over all "available motorcycle" images to get column and row
-        # to later on get the date & time of that session
         input_elements = self.driver.find_elements(By.TAG_NAME, "input")
         last_practical_input_element = None
         has_booked_lessons = False
@@ -407,6 +422,8 @@ class handler(CDCAbstract):
         
         for input_element in input_elements:
             # Images1.gif -> available slot
+            # Images2.gif -> reserved slot
+            # Images3.gif -> booked slot
             input_element_src = input_element.get_attribute("src")
             if "Images1.gif" in input_element_src or "Images2.gif" in input_element_src or "Images3.gif" in input_element_src:
                 # e.g. ctl00_ContentPlaceHolder1_gvLatestav_ctl02_btnSession4 (02 is row, 4 is column)

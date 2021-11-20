@@ -1,4 +1,5 @@
 #!/media/Programming/repos/py/_selenium/CDC_HELPER/venv/bin/python
+import datetime
 import time, sys, os
 sys.path.insert(0, os.getcwd())
 
@@ -36,58 +37,25 @@ if __name__ == "__main__":
 
         while True:
             
-            while not cdc_handler.logged_in:
-                time.sleep(1)
-            
             cdc_handler.open_booking_overview()
             cdc_handler.get_booked_lesson_date_time()
             cdc_handler.get_reserved_lesson_date_time()
-
-            if monitored_types["practical"]:
-                if cdc_handler.open_practical_lessons_booking(field_type=Types.PRACTICAL):
-                    if "REVISION" in cdc_handler.lesson_name_practical:
-                        log.debug("No practical lesson available for user, seems user has completed practical lessons")
-                    else:   
-                        #TODO: Test this part
-                        cdc_handler.get_all_session_date_times(field_type=Types.PRACTICAL)
-                        cdc_handler.get_all_available_sessions(field_type=Types.PRACTICAL)
-                        if cdc_handler.can_book_next_practical_lesson:
-                            cdc_handler.check_if_earlier_available_sessions(Types.ETT)
-                else:
-                    pass # No course found
-                
-            if monitored_types["ett"]:
-                if cdc_handler.open_etrial_test_book_page():
-                    cdc_handler.get_all_session_date_times(field_type=Types.ETT)
-                    cdc_handler.get_all_available_sessions(field_type=Types.ETT)
-                    cdc_handler.check_if_earlier_available_sessions(Types.ETT)
-                else:
-                    log.debug("User does not have ETT as an available option.")
             
-            if monitored_types["btt"]:
-                if cdc_handler.open_theory_test_booking_page(field_type=Types.BTT):
-                    cdc_handler.get_all_session_date_times(field_type=Types.BTT)
-                    cdc_handler.get_all_available_sessions(field_type=Types.BTT)
-                    cdc_handler.check_if_earlier_available_sessions(Types.BTT)
-                else:
-                    log.debug("User does not have BTT as an available option.")
-                    
-            if monitored_types["rtt"]:
-                if cdc_handler.open_theory_test_booking_page(field_type=Types.RTT):
-                    cdc_handler.get_all_session_date_times(field_type=Types.RTT)
-                    cdc_handler.get_all_available_sessions(field_type=Types.RTT)
-                    cdc_handler.check_if_earlier_available_sessions(Types.RTT)
-                else:
-                    log.debug("User does not have RTT as an available option.")
-                    
-            # TODO: Add more checks (SIMULATOR, PT)
+            for monitor_type, monitor_active in monitored_types.items():
+                if monitor_active:
+                    if cdc_handler.open_field_type_booking_page(field_type=monitor_type):
+                        cdc_handler.get_all_session_date_times(field_type=monitor_type)
+                        cdc_handler.get_all_available_sessions(field_type=monitor_type)
+                        cdc_handler.check_if_earlier_available_sessions(field_type=monitor_type)
+                    else:
+                        log.debug(f"User does not have {monitor_type.upper()} as an available option.") 
             
             log.info(cdc_handler)
             cdc_handler.flush_notification_update()
 
-            if program_config["refresh_rate"]:
+            if program_config["refresh_rate"] > 0:
                 sleep_time = program_config["refresh_rate"]
-                cdc_handler.log.info(f"Program now halting for {sleep_time}s...")
+                cdc_handler.log.info(f"Program now sleeping for {datetime.timedelta(seconds=sleep_time)}...")
                 time.sleep(program_config["refresh_rate"])
                 cdc_handler.log.info(f"Program now resuming! Cached log in ?: {cdc_handler.logged_in}")
             else:

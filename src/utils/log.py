@@ -1,10 +1,8 @@
-import os, shutil, sys, logging
-from datetime import datetime
+import sys, logging, datetime
 
 from src.utils.common import utils
-from src.utils.common import selenium_common
 
-FORMATTER = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
+FORMATTER = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
 DEFAULT_CONFIG = {
     "log_level" : 1, # 1 - DEBUG, 2 - INFO, 3 - WARN, 4- ERROR
     
@@ -35,7 +33,7 @@ class Log:
             log.addHandler(terminal_output)
         
         if self.config["write_log_to_file"]:        
-            file_output = logging.FileHandler('{dir}/tracker_{date}.log'.format(dir=directory, date=datetime.today().strftime("%Y-%m-%d_%H-%M")))
+            file_output = logging.FileHandler(f"{directory}/tracker_{datetime.datetime.today().strftime('%Y-%m-%d_%H-%M')}.log")
             file_output.setFormatter(FORMATTER)
             log.addHandler(file_output)
 
@@ -79,4 +77,3 @@ class Log:
     def warning_if(self, condition:bool, *output):
         if condition:
             self.warning(*output)
-    

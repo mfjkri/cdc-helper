@@ -1,4 +1,4 @@
-import traceback, time, os, tempfile, base64
+import traceback, time, base64
 from types import LambdaType
 from typing import Dict
 
