@@ -1,14 +1,16 @@
 import os
 
+python_v = "python3"
+
 prjDir = os.getcwd()
 os.system(f"cd {prjDir}")
 
 # ---------------------------- Creating python env --------------------------- #
-os.system("python -m venv venv")
+os.system(f"{python_v} -m venv venv")
 # ------------------------------------- - ------------------------------------ #
 
 # -------------------------- Installing dependencies ------------------------- #
-os.system("venv/bin/python -m pip install -r requirements.txt")
+os.system(f"venv/bin/{python_v} -m pip install -r requirements.txt")
 # ------------------------------------- - ------------------------------------ #
 
 # ---------------------- Giving program executable perm ---------------------- #
@@ -107,7 +109,7 @@ except IOError:
 data = None
 with open("src/main.py", 'r') as main_py:
     data = main_py.readlines()
-data[0] = f"#!{prjDir}/venv/bin/python\n"
+data[0] = f"#!{prjDir}/venv/bin/{python_v}\n"
 with open('src/main.py', 'w') as main_py:
     main_py.writelines(data)
 # ------------------------------------- - ------------------------------------ #
