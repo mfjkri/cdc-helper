@@ -6,9 +6,3 @@ python-telegram-bot
 
 #two_captcha.py
 2captcha-python
-
-#captcha_bypas.py
-SpeechRecognition
-requests
-selenium
-pydub

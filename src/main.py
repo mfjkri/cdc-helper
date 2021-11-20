@@ -8,7 +8,6 @@ from src.website_handler import handler, Types
 from src.utils.common import utils
 from src.utils.log import Log
 from src.utils.captcha.two_captcha import Captcha as TwoCaptcha
-from src.utils.captcha.captcha_bypass import Captcha as CaptchaBypass
 from src.utils.notifications.notification_manager import NotificationManager
 
 
