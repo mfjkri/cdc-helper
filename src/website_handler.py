@@ -1,4 +1,4 @@
-import time, datetime
+import os, time, datetime
 from typing import Dict, List, Union
 
 from selenium import webdriver
@@ -61,9 +61,9 @@ class handler(CDCAbstract):
         options.add_argument("--no-sandbox")
         options.add_argument("--no-proxy-server")
 
-        self.driver =  ( browser_type.lower() == "firefox" and webdriver.Firefox(executable_path="drivers/geckodriver", options=options) 
+        self.driver =  ( browser_type.lower() == "firefox" and webdriver.Firefox(executable_path=os.path.join("drivers", "geckodriver"), options=options) 
                          or 
-                         webdriver.Chrome(executable_path="drivers/chromedriver.exe", options=options))
+                         webdriver.Chrome(executable_path=os.path.join("drivers", "chromedriver.exe"), options=options))
         
         self.driver.set_window_size(1600, 768)
         super().__init__(username=self.username, password=self.password, headless=headless)
