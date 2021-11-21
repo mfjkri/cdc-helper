@@ -59,7 +59,7 @@ class Captcha:
             img_base64_str = captcha_element.get_attribute("src")[23:];
             img_base64 = str.encode(img_base64_str)
 
-            captcha_image_filepath = os.path.join("temp", f"normal_captcha_{utils.get_datetime_now('dd-mm-yy hh:mm:ss')}.jpeg")
+            captcha_image_filepath = os.path.join("temp", f"normal_captcha_{utils.get_datetime_now('ddmmyyyy hhmmss')}.jpeg")
             with open(captcha_image_filepath, "wb") as image_file:
                 image_file.write(base64.decodebytes(img_base64))
                 image_file.close()

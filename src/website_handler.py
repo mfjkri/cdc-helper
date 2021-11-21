@@ -1,4 +1,4 @@
-import os, time, datetime
+import sys, os, time, datetime
 from typing import Dict, List, Union
 
 from selenium import webdriver
@@ -46,6 +46,8 @@ class handler(CDCAbstract):
         self.notification_update_msg = ""
         self.has_slots_reserved = False
         
+        self.platform = "linux" if "linux" in sys.platform else "windows" if "win32" in sys.platform else "osx"
+        
         self.opening_booking_page_callback_map = {
             Types.ETT : self.open_etrial_test_booking_page,
             Types.BTT : self.open_theory_test_booking_page,
@@ -60,10 +62,16 @@ class handler(CDCAbstract):
             options.add_argument("--headless")
         options.add_argument("--no-sandbox")
         options.add_argument("--no-proxy-server")
+        
+        executable_path = os.path.join(
+            os.getcwd(), "drivers", self.platform, 
+            "geckodriver" if browser_type.lower() == "firefox" else "chromedriver.exe"
+        )
+        
 
-        self.driver =  ( browser_type.lower() == "firefox" and webdriver.Firefox(executable_path=os.path.join("drivers", "geckodriver"), options=options) 
+        self.driver =  ( browser_type.lower() == "firefox" and webdriver.Firefox(executable_path=executable_path, options=options) 
                          or 
-                         webdriver.Chrome(executable_path=os.path.join("drivers", "chromedriver.exe"), options=options))
+                         webdriver.Chrome(executable_path=executable_path, options=options))
         
         self.driver.set_window_size(1600, 768)
         super().__init__(username=self.username, password=self.password, headless=headless)
