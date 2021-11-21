@@ -1,6 +1,9 @@
 import os, argparse, logging, datetime, subprocess, sys
 
+
+
 if __name__ == "__main__":
+
     log = logging.getLogger("CDC_HANDLER setup")
     log.setLevel(10)
     formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
@@ -42,20 +45,13 @@ if __name__ == "__main__":
     # ---------------------------- Creating python env --------------------------- #
     if not os.path.exists(os.path.join(prjDir, "venv")):
         log.info(f"Creating Python venv...")
-        subprocess.call([python_ver_keyword, "-m", "venv" ,"venv"])
+        subprocess.call([python_ver_keyword, "-m", "venv", "venv"])
     else:
         log.info(f"Python venv already exist! Skipping this part...")
         
     # ------------------------------------- - ------------------------------------ #
-
-
-    # ---------------------- Giving program executable perm ---------------------- #
-    #os.system("sudo chmod u+x drivers/geckodriver")
-    log.info(f"Setting src/main.py to be an executable...")
-    subprocess.call(["sudo", "chmod", "u+x" ,"src/main.py"])
-    # ------------------------------------- - ------------------------------------ #
-
-
+    
+    
     # ------------------------- Creating config.yaml file ------------------------ #
     try:
         with open("config.yaml") as config_file:
@@ -149,9 +145,24 @@ if __name__ == "__main__":
     with open('src/main.py', 'w') as main_py:
         main_py.writelines(data)
     # ------------------------------------- - ------------------------------------ #
+
+
+    if "linux" in sys.platform:
+
+        # ---------------------- Giving program executable perm ---------------------- #
+        subprocess.call(["sudo", "chmod", "u+x", "drivers/geckodriver"])
+        log.info(f"Setting src/main.py to be an executable...")
+        subprocess.call(["sudo", "chmod", "u+x", "src/main.py"])
+        # ------------------------------------- - ------------------------------------ #
+
     
-    
-    # -------------------------- Installing dependencies ------------------------- #
-    log.info(f"Installing dependencies based on requirements.txt into venv now...")
-    subprocess.call([f"venv/bin/{python_ver_keyword}", "-m", "pip", "install", "-r", "requirements.txt"])
-    # ------------------------------------- - ------------------------------------ #
+        # -------------------------- Installing dependencies ------------------------- #
+        log.info(f"Installing dependencies based on requirements.txt into venv now...")
+        subprocess.call([f"venv/bin/{python_ver_keyword}", "-m", "pip", "install", "-r", "requirements.txt"])
+        # ------------------------------------- - ------------------------------------ #
+        
+    elif "win32" in sys.platform:
+        log.info("Doing it for windows!")
+
+    elif "darwin" in sys.sys.platform:
+        log.error("setup.py currently does not support installing of dependencies. Please do this manually.")
