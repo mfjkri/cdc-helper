@@ -137,7 +137,7 @@ if __name__ == "__main__":
 
 
     # ----------------- Modify shebang in main.py to relativepath ---------------- #
-    log.info(f"Setting shebang of src/main.py to correct PATH...")    
+    log.info(f"Setting shebang of src/main.py to venv intepreter...")    
     data = None
     with open("src/main.py", 'r') as main_py:
         data = main_py.readlines()
@@ -150,6 +150,7 @@ if __name__ == "__main__":
     if "linux" in sys.platform:
 
         # ---------------------- Giving program executable perm ---------------------- #
+        log.info(f"Setting drivers/geckodriver to be an executable...")
         subprocess.call(["sudo", "chmod", "u+x", "drivers/geckodriver"])
         log.info(f"Setting src/main.py to be an executable...")
         subprocess.call(["sudo", "chmod", "u+x", "src/main.py"])
@@ -157,7 +158,7 @@ if __name__ == "__main__":
 
     
         # -------------------------- Installing dependencies ------------------------- #
-        log.info(f"Installing dependencies based on requirements.txt into venv now...")
+        log.info(f"Installing dependencies from requirements.txt into venv now...")
         subprocess.call([f"venv/bin/{python_ver_keyword}", "-m", "pip", "install", "-r", "requirements.txt"])
         # ------------------------------------- - ------------------------------------ #
         
