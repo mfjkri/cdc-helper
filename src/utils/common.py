@@ -79,6 +79,9 @@ class utils:
         return result
     
     def clear_directory(directory:str, log=DEFAULT_LOG):
+        if not utils.os.path.isdir(directory):
+            return log.error(f"Directory: {utils.os.path.join(utils.os.getcwd(), directory)} does not exist.")
+
         for filename in utils.os.listdir(directory):
             file_path = utils.os.path.join(directory, filename)
 
@@ -88,7 +91,7 @@ class utils:
                 elif utils.os.path.isdir(file_path):
                     utils.shutil.rmtree(file_path)
             except Exception as e:
-                log.error('Failed to delete %s. Reason: %s' % (file_path, e))   
+                log.error("Failed to delete %s. Reason: %s" % (file_path, e))   
 
     def remove_files(files: list, log=DEFAULT_LOG):
         for file in files:

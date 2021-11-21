@@ -1,4 +1,4 @@
-import sys, logging, datetime
+import sys, os, logging, datetime
 
 from src.utils.common import utils
 
@@ -33,7 +33,7 @@ class Log:
             log.addHandler(terminal_output)
         
         if self.config["write_log_to_file"]:        
-            file_output = logging.FileHandler(f"{directory}/tracker_{datetime.datetime.today().strftime('%Y-%m-%d_%H-%M')}.log")
+            file_output = logging.FileHandler(os.path.join(directory, f"tracker_{datetime.datetime.today().strftime('%Y-%m-%d_%H-%M')}.log"))
             file_output.setFormatter(FORMATTER)
             log.addHandler(file_output)
 

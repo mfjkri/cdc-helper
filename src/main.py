@@ -16,11 +16,11 @@ if __name__ == "__main__":
     config = utils.load_config_from_yaml_file(file_path="config.yaml")
     program_config = config["program_config"]
 
-    log = Log(directory="logs/", name="cdc-helper", config=config["log_config"])
+    log = Log(directory="logs", name="cdc-helper", config=config["log_config"])
     captcha_solver = TwoCaptcha(log=log, config=config["two_captcha_config"])
     notification_manager = NotificationManager(log = log, mail_config=config["mail_config"], telegram_config=config["telegram_config"])
 
-    utils.clear_directory("temp/", log)
+    utils.clear_directory("temp", log)
 
     with handler(
             login_credentials=config["cdc_login_credentials"], 
