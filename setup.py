@@ -1,8 +1,8 @@
 import os, argparse, logging, datetime, subprocess, sys
 
-
-
 if __name__ == "__main__":
+    
+    is_windows, is_linux = "win32" in sys.platform, "linux" in sys.platform
 
     log = logging.getLogger("CDC_HANDLER setup")
     log.setLevel(10)
@@ -12,13 +12,18 @@ if __name__ == "__main__":
     terminal_output.setFormatter(formatter)
     log.addHandler(terminal_output)
 
+    log_filename = f"project_setup_{datetime.datetime.today().strftime('%Y-%m-%d_%H-%M')}.log"
+    file_output = logging.FileHandler(log_filename)
+    file_output.setFormatter(formatter)
+    log.addHandler(file_output)
+
     PARSER = argparse.ArgumentParser()
     PARSER.add_argument(
-        "--py_version", "--pyv", 
+        "--intepreter_keyword", 
         type=str,
-        help="Python version to use (USE PYTHON 3 WHEN POSSIBLE) (dependent on your OS i.e python -> python2 or python -> python3, Use python --version to check python version)",
-        default="python3", 
-        required=False
+        help="Python version to use (USE PYTHON 3 WHEN POSSIBLE) (dependent on your OS i.e python could point to either python 2 OR python3, Use python --version to check python version)",
+        #default="python", 
+        required=True
     )
     ARGS = PARSER.parse_args()
     
@@ -26,26 +31,25 @@ if __name__ == "__main__":
     log.info(f"Changing working directory to: {prjDir}")
     os.chdir(prjDir)
 
+
     # -------------------- Creating temp and logs directories -------------------- #
     log.info("Creating logs and temp directories...")
-    subprocess.call(["mkdir", "logs"])
-    subprocess.call(["mkdir", "temp"])
+    subprocess.run(["mkdir", "logs"], shell=is_windows)
+    subprocess.run(["mkdir", "temp"], shell=is_windows)
     # ------------------------------------- - ------------------------------------ #
-
-
-    file_output = logging.FileHandler(f"logs/0project_setup_{datetime.datetime.today().strftime('%Y-%m-%d_%H-%M')}.log")
-    file_output.setFormatter(formatter)
-    log.addHandler(file_output)
     
-    python_ver_keyword = ARGS.py_version
-    python_version = subprocess.check_output([python_ver_keyword, "--version"])
+
+    os.rename(log_filename, os.path.join("logs", log_filename))
+    
+    python_ver_keyword = ARGS.intepreter_keyword
+    python_version = subprocess.check_output([python_ver_keyword, "--version"], shell=is_windows)
     log.info(f"PYTHON VERSION BEING USED IS: {python_version}")
 
 
     # ---------------------------- Creating python env --------------------------- #
     if not os.path.exists(os.path.join(prjDir, "venv")):
         log.info(f"Creating Python venv...")
-        subprocess.call([python_ver_keyword, "-m", "venv", "venv"])
+        subprocess.run([python_ver_keyword, "-m", "venv", "venv"])
     else:
         log.info(f"Python venv already exist! Skipping this part...")
         
@@ -139,31 +143,42 @@ if __name__ == "__main__":
     # ----------------- Modify shebang in main.py to relativepath ---------------- #
     log.info(f"Setting shebang of src/main.py to venv intepreter...")    
     data = None
-    with open("src/main.py", 'r') as main_py:
+    path_to_main_py = os.path.join("src", "main.py")
+    with open(path_to_main_py, 'r') as main_py:
         data = main_py.readlines()
-    data[0] = f"#!{prjDir}/venv/bin/{python_ver_keyword}\n"
-    with open('src/main.py', 'w') as main_py:
+        
+    
+    data[0] = f"#!{os.path.join(prjDir, 'venv', 'bin', python_ver_keyword)}\n"
+    with open(path_to_main_py, 'w') as main_py:
         main_py.writelines(data)
     # ------------------------------------- - ------------------------------------ #
 
 
-    if "linux" in sys.platform:
+    if is_linux:
 
         # ---------------------- Giving program executable perm ---------------------- #
-        log.info(f"Setting drivers/geckodriver to be an executable...")
-        subprocess.call(["sudo", "chmod", "u+x", "drivers/geckodriver"])
+        log.info(f"Setting drivers to be an executable...")
+        for platform_dir in os.listdir("drivers"):
+            for driver_file in os.listdir(os.path.join("drivers", platform_dir)):
+                file_path = os.path.join("drivers", platform_dir, driver_file)
+                subprocess.run(["sudo", "chmod", "u+x", file_path])
+        
         log.info(f"Setting src/main.py to be an executable...")
-        subprocess.call(["sudo", "chmod", "u+x", "src/main.py"])
+        subprocess.run(["sudo", "chmod", "u+x", "src/main.py"])
         # ------------------------------------- - ------------------------------------ #
 
     
         # -------------------------- Installing dependencies ------------------------- #
         log.info(f"Installing dependencies from requirements.txt into venv now...")
-        subprocess.call([f"venv/bin/{python_ver_keyword}", "-m", "pip", "install", "-r", "requirements.txt"])
+        subprocess.run([f"venv/bin/{python_ver_keyword}", "-m", "pip", "install", "-r", "requirements.txt"])
         # ------------------------------------- - ------------------------------------ #
         
-    elif "win32" in sys.platform:
-        log.info("Doing it for windows!")
-
+    elif is_windows:
+        
+        # -------------------------- Installing dependencies ------------------------- #
+        log.info(f"Installing dependencies from requirements.txt into venv now...")
+        subprocess.run([os.path.join("venv", "Scripts", f"{python_ver_keyword}.exe"), "-m", "pip", "install", "-r", r".\requirements.txt"], shell=True)
+        # ------------------------------------- - ------------------------------------ #
+        
     elif "darwin" in sys.sys.platform:
         log.error("setup.py currently does not support installing of dependencies. Please do this manually.")
