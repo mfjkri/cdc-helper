@@ -12,10 +12,10 @@ if __name__ == "__main__":
     terminal_output.setFormatter(formatter)
     log.addHandler(terminal_output)
 
-    log_filename = f"project_setup_{datetime.datetime.today().strftime('%Y-%m-%d_%H-%M')}.log"
-    file_output = logging.FileHandler(log_filename)
-    file_output.setFormatter(formatter)
-    log.addHandler(file_output)
+    log_filename = f"project_setup.log"
+    log_file = logging.FileHandler(log_filename)
+    log_file.setFormatter(formatter)
+    log.addHandler(log_file)
 
     PARSER = argparse.ArgumentParser()
     PARSER.add_argument(
@@ -39,8 +39,6 @@ if __name__ == "__main__":
     # ------------------------------------- - ------------------------------------ #
     
 
-    os.rename(log_filename, os.path.join("logs", log_filename))
-    
     python_ver_keyword = ARGS.intepreter_keyword
     python_version = subprocess.check_output([python_ver_keyword, "--version"], shell=is_windows)
     log.info(f"PYTHON VERSION BEING USED IS: {python_version}")
