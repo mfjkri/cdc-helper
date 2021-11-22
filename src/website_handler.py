@@ -598,8 +598,8 @@ class handler(CDCAbstract):
         has_changes = self.check_if_same_sessions(self.get_attribute_with_fieldtype("cached_earlier_sessions", field_type),  earlier_sessions)
         
         if has_changes:
-            if self.auto_reserve:
-                number_of_slots_needed = self.program_config["slots_per_type"][field_type] 
+            number_of_slots_needed = self.program_config["slots_per_type"][field_type] 
+            if self.auto_reserve and number_of_slots_needed > 0:
                 earliest_sessions_to_be_reserved = self.get_earliest_time_slots(earlier_sessions, number_of_slots_needed)
                 to_be_removed_reservations = {}
                 
