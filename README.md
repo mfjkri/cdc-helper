@@ -17,7 +17,6 @@
 
 <h2>Setting Up</h2>
 
-<hr>
 <h3>1) TwoCaptcha</h3>
 <p></p>
 <p>This project uses a third party API that is unfortunately a <b>paid</b> service. </p>  
@@ -44,7 +43,7 @@
 <p>Ensure that the python version you're using is python 3</p>
 
 ```
-python setup.py --intepreter_keyword "python"
+$ python setup.py --intepreter_keyword "python"
 ```
 
 <p>If python keyword in your system points Python2, then use the keyword that points to Python3 and replace the intepreter_keyword with it accordingly.</p>
@@ -65,7 +64,18 @@ python setup.py --intepreter_keyword "python"
 
 <h1>Running</h1>
 
-<hr>
+```
+$ path/to/project/venv/.../python src/main.py
+```
+<p>OR, if you have <a href="https://github.com/mfjkri/cdc-helper/blob/master/src/main.py">main.py</a> set to be an execeutable with a valid shebang:<p>
+
+```
+$ cd path/to/project
+$ src/main.py
+```
+
+<h1>Appendix</h1>
+
 <h3 id="config-yaml">config.yaml</h3>
 
 ```
