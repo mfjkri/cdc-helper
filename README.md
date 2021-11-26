@@ -58,7 +58,10 @@ $ python setup.py --intepreter_keyword "python"
 
 <ol>
   <li>Create a virtual environment, <a href="https://docs.python.org/3/library/venv.html" title="Python venv">venv</a>, for your project</li>
-  <li>Install dependencies: ```path/to/venv_python -m pip install -r "requirements.txt"```</li>
+  <li>Install dependencies:</li>
+  
+  ```$ path/to/project/venv/.../python -m pip install -r "requirements.txt"```
+
   <li>Create <a href="#config-yaml">config.yaml</a> file</li>
 </ol> 
 
