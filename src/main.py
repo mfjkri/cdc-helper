@@ -19,8 +19,11 @@ if __name__ == "__main__":
     log = Log(directory="logs", name="cdc-helper", config=config["log_config"])
     captcha_solver = TwoCaptcha(log=log, config=config["two_captcha_config"])
     notification_manager = NotificationManager(log = log, mail_config=config["mail_config"], telegram_config=config["telegram_config"])
-
-    utils.clear_directory("temp", log)
+    
+    if not os.path.exists("temp"):
+        os.makedirs("temp")
+    else:
+        utils.clear_directory("temp", log)
 
     with handler(
             login_credentials=config["cdc_login_credentials"], 

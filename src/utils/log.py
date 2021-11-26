@@ -23,6 +23,9 @@ class Log:
         self.name = name
         self.directory = directory 
         self.config = utils.init_config_with_default(config, DEFAULT_CONFIG)
+        
+        if not os.path.exists(directory):
+            os.makedirs(directory)
 
         if self.config["clear_logs_init"]:
             utils.clear_directory(directory=self.directory, log=self.logger)
