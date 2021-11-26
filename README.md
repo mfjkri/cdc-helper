@@ -1,6 +1,6 @@
-<h2>CDC-HELPER</h2>
+<h1>CDC-HELPER</h1>
 
-<h2>Features:</h2>
+<h1>Features:</h1>
 <ul>
   <li>Fetch available dates for E-Trial, BTT, RTT, Practical Lesson, PT</li>
   <li>Compare with booked dates for each</li>
@@ -8,22 +8,38 @@
   <li>Attempt and reserve the slot if possible</li>
 </ul> 
 
-<h2>Prerequisites</h2>
+<h1>Prerequisites</h1>
 
-<h3>Python 3</h3>
+<h2>Python 3</h2>
 
 <p>If you do not already have Python3 install it from the official website [here](https://www.python.org/downloads).</p>
   
 
-<h3>Setting Up</h3>
+<h2>Setting Up</h2>
+
+<hr>
+<h3>1) TwoCaptcha</h3>
+<p></p>
+<p>This project uses a third party API that is unfortunately a <b>paid</b> service. </p>  
+<p>As of writing this, the rates of using this API are <i>relatively cheap</i> (SGD$5 can last you for about a month of the program runtime).</p>
+<p>To continue using this project, head over to <a href="https://2captcha.com/" title = "2captcha">2captcha.com</a><p>
+<ul>
+  <li>Create an account</li>
+  <li>Top up your account with sufficient credits</li>
+  <li>Copy your API Token and paste it into <a href="#config-yaml" title = "config">config.yaml</a></li>
+</ul>
+<p>If you do not wish to use this service and have some python knowledge, you can attempt to swap out the service for a machine learning model for solving captchas (reCaptchaV2 + normal Captcha). </p>
+
+<hr>
+<h3>2) Telegram & Email Notifications</h3>
 
 
 <hr>
-<h4>A) Using <a href="https://github.com/mfjkri/cdc-helper/blob/master/setup.py" title="setup.py">setup.py</a>:</h4>
+<h3>3A) Using <a href="https://github.com/mfjkri/cdc-helper/blob/master/setup.py" title="setup.py">setup.py</a>:</h3>
 <p></p> 
 
 
-<h5><b>For Windows & Linux:</b></h5>
+<h4><b>For Windows & Linux:</b></h4>
 
 <p>Ensure that the python version you're using is python 3</p>
 
@@ -33,13 +49,13 @@ python setup.py --intepreter_keyword "python"
 
 <p>If python keyword in your system points Python2, then use the keyword that points to Python3 and replace the intepreter_keyword with it accordingly.</p>
 
-<h5><b>Others:</b></h5>
+<h4><b>Others:</b></h4>
 
-<p>This project isn't guaranteed to work on other operating systems. You can try building the project by following the manual steps.</p>
+<p>This project isn't guaranteed to work on other operating systems. You can try building the project by following the <a href="#manual-steps">manual steps</a>.</p>
 
 
 <hr>
-<h4>B) Manually</h4>
+<h3 id="manual-steps">3B) Manually</h3>
 
 <ol>
   <li>Create a virtual environment, <a href="https://docs.python.org/3/library/venv.html" title="Python venv">venv</a>, for your project</li>
@@ -47,9 +63,10 @@ python setup.py --intepreter_keyword "python"
   <li>Create <a href="#config-yaml">config.yaml</a> file</li>
 </ol> 
 
+<h1>Running</h1>
 
 <hr>
-<h4 id="config-yaml">config.yaml</h4>
+<h3 id="config-yaml">config.yaml</h3>
 
 ```
 # ---------------------------- TWO-CAPTCHA CONFIG ---------------------------- #
