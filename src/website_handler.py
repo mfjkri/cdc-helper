@@ -214,7 +214,7 @@ class handler(CDCAbstract):
         return False
             
     def select_course_from_idx(self, course_data:Dict, course_idx:str):
-        if course_idx > 0 and course_idx < len(course_data["available_courses"]):
+        if course_idx > 0 or course_idx < len(course_data["available_courses"]):
             self.log.error(f"Course selected is out of range. {course_data['available_courses']}")
             return False
         
