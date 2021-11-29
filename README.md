@@ -32,6 +32,34 @@
 <hr>
 <h3>2) Telegram & Email Notifications</h3>
 
+<h4><b>Email:</b></h4>
+
+<p>If you wish to enable Email  notifications:</p>
+<ol>
+  <li>Set <i>email_notification_enabled<sup>1</sup></i> to <b>True</b> </li>
+  <li>Set <i>smtp_server<sup>1</sup></i> and <i>smtp_port<sup>1</sup></i> accordingly (Default values are for gmail)</li>
+  <li>Set <i>smtp_user<sup>1</sup></i> to your email address</li>
+  <li>Set <i>smtp_pw<sup>1</sup></i> to your email account password (you may have to create an App password if your account has 2FA enabled; for <a href = "https://www.nucleustechnologies.com/supportcenter/kb/how-to-create-an-app-password-for-gmail">gmail</a>)</li>
+  <li>Set <i>recipient_address<sup>1</sup></i> to the email address to send notifications to (You should set it to be the same as <i>smtp_user<sup>1</sup></i>)</li>
+   
+</ol>
+
+<h4><b>Telegram:</b></h4>
+
+<p>If you wish to enable Telegram notifications:</p>
+<ol>
+  <li>Set <i>telegram_notification_enabled<sup>2</sup></i> to <b>True</b> </li>
+  <li>Follow this <a href = "https://www.teleme.io/articles/create_your_own_telegram_bot?hl=en" title = "Creating telegram bot">guide</a> to create your telegram bot</li>
+  <li>Copy the API Token generated and paste it into <i>telegram_bot_token<sup>2</sup></i></li>
+  <li>Send your bot \start on Telegram</li>
+  <li>Visit this URL: https://api.telegram.org/botBOT_TOKEN/getUpdates, replacing <i>BOT_TOKEN</i> with your API Token from (3)</li>
+  <li>Send a test message to your bot on Telegram</li>
+  <li>There should be an new entry in the JSON on the URL you opened from (5)</li>
+  <li>Copy the chat ID from the JSON (result::[X]::message::chat::id) and paste it into <i>telegram_chat_id<sup>2</sup</i></li>
+</ol>
+
+<p><sup>1</sup> - <i>mail_config</i> in <a href="#config-yaml">config.yaml</a></p>
+<p><sup>2</sup> - <i>telegram_config</i> in <a href="#config-yaml">config.yaml</a></p>
 
 <hr>
 <h3>3A) Using <a href="https://github.com/mfjkri/cdc-helper/blob/master/setup.py" title="setup.py">setup.py</a>:</h3>
@@ -50,7 +78,7 @@ $ python setup.py --intepreter_keyword "python"
 
 <h4><b>Others:</b></h4>
 
-<p>This project isn't guaranteed to work on other operating systems. You can try building the project by following the <a href="#manual-steps">manual steps</a>.</p>
+<p>This project isn't guaranteed to work on other operating systems. You can try building the project by following the <a href="#manual-steps">manual steps (3B)</a>.</p>
 
 
 <hr>
@@ -141,7 +169,7 @@ program_config:
     rr        : False
 
 browser_config:
-  type: firefox        # Uses firefox driver as default (other option is chrome if you have its binaries.
+  type: firefox        # Uses firefox driver as default (other option is chrome if you have its binaries).
   headless_mode: True  # If true, selenium_driver will run without the visible UI.
 # ------------------------------------- - ------------------------------------ #
 
