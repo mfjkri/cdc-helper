@@ -122,7 +122,7 @@ if __name__ == "__main__":
                     "    rr        : False\n\n",
 
                     "browser_config:\n",
-                    "  type: firefox        # Uses firefox driver as default (other option is chrome if you have its binaries.\n",
+                    "  type: firefox        # Uses firefox driver as default (other option is chrome if you have its binaries).\n",
                     "  headless_mode: True  # If true, selenium_driver will run without the visible UI.\n",
                     "# ------------------------------------- - ------------------------------------ #\n\n\n",
 

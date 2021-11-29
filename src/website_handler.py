@@ -622,7 +622,6 @@ class handler(CDCAbstract):
                                 input_element_id = web_elements_in_view[f"{reserved_date_str} : {reserved_time_slot}"]
                                 input_element = selenium_common.wait_for_elem(self.driver, By.ID, input_element_id)
                                 input_element.click()
-                                self.log.info(f"Attempting to remove reservation from {field_type.upper()} slot on {reserved_date_str} : {reserved_time_slot}.")
 
                                 alert_found, alert_text = selenium_common.dismiss_alert(self.driver, timeout=10)
                                 if alert_found:
@@ -630,6 +629,7 @@ class handler(CDCAbstract):
                                     number_of_slots_needed -= 1
                                     break
                                 else:
+                                    self.log.info(f"Successfully reserved a {field_type.upper()} slot on {reserved_date_str} : {reserved_time_slot}.")
                                     to_be_removed_reservations[reserved_date_str].append(reserved_time_slot)
                     else:
                         number_of_slots_needed -= len(reserved_time_slots)
@@ -645,7 +645,7 @@ class handler(CDCAbstract):
                         del reserved_sessions[date_str]   
                 
                 if number_of_slots_needed > 0:
-                    self.log.info(f"Number of slots left to reserve for {field_type.upper} is: {number_of_slots_needed}")
+                    self.log.info(f"Number of slots to reserve for {field_type.upper()} is: {number_of_slots_needed}")
                     insufficient_funds = False
                     earliest_sessions_to_be_reserved = self.get_earliest_time_slots(earlier_sessions, number_of_slots_needed)
                     
