@@ -23,9 +23,9 @@
 <p>As of writing this, the rates of using this API are <i>relatively cheap</i> (SGD$5 can last you for about a month of the program runtime).</p>
 <p>To continue using this project, head over to <a href="https://2captcha.com/" title = "2captcha">2captcha.com</a><p>
 <ul>
-  <li>Create an account</li>
-  <li>Top up your account with sufficient credits</li>
-  <li>Copy your API Token and paste it into <a href="#config-yaml" title = "config">config.yaml</a></li>
+  <li>Create an account.</li>
+  <li>Top up your account with sufficient credits.</li>
+  <li>Copy your API Token and paste it into <a href="#config-yaml" title = "config">config.yaml</a>.</li>
 </ul>
 <p>If you do not wish to use this service and have some python knowledge, you can attempt to swap out the service for a machine learning model for solving captchas (reCaptchaV2 + normal Captcha). </p>
 
@@ -36,11 +36,11 @@
 
 <p>If you wish to enable Email  notifications:</p>
 <ol>
-  <li>Set <i>email_notification_enabled<sup>1</sup></i> to <b>True</b> </li>
-  <li>Set <i>smtp_server<sup>1</sup></i> and <i>smtp_port<sup>1</sup></i> accordingly (Default values are for gmail)</li>
-  <li>Set <i>smtp_user<sup>1</sup></i> to your email address</li>
-  <li>Set <i>smtp_pw<sup>1</sup></i> to your email account password (you may have to create an App password if your account has 2FA enabled; for <a href = "https://www.nucleustechnologies.com/supportcenter/kb/how-to-create-an-app-password-for-gmail">gmail</a>)</li>
-  <li>Set <i>recipient_address<sup>1</sup></i> to the email address to send notifications to (You should set it to be the same as <i>smtp_user<sup>1</sup></i>)</li>
+  <li>Set <i>email_notification_enabled<sup>1</sup></i> to <b>True</b>.</li>
+  <li>Set <i>smtp_server<sup>1</sup></i> and <i>smtp_port<sup>1</sup></i> accordingly (Default values are for gmail).</li>
+  <li>Set <i>smtp_user<sup>1</sup></i> to your email address.</li>
+  <li>Set <i>smtp_pw<sup>1</sup></i> to your email account password (you may have to create an App password if your account has 2FA enabled; for <a href = "https://www.nucleustechnologies.com/supportcenter/kb/how-to-create-an-app-password-for-gmail">gmail</a>).</li>
+  <li>Set <i>recipient_address<sup>1</sup></i> to the email address to send notifications to (You should set it to be the same as <i>smtp_user<sup>1</sup></i>).</li>
    
 </ol>
 
@@ -48,14 +48,14 @@
 
 <p>If you wish to enable Telegram notifications:</p>
 <ol>
-  <li>Set <i>telegram_notification_enabled<sup>2</sup></i> to <b>True</b> </li>
-  <li>Follow this <a href = "https://www.teleme.io/articles/create_your_own_telegram_bot?hl=en" title = "Creating telegram bot">guide</a> to create your telegram bot</li>
-  <li>Copy the API Token generated and paste it into <i>telegram_bot_token<sup>2</sup></i></li>
-  <li>Send your bot \start on Telegram</li>
-  <li>Visit this URL: https://api.telegram.org/botBOT_TOKEN/getUpdates, replacing <i>BOT_TOKEN</i> with your API Token from (3)</li>
-  <li>Send a test message to your bot on Telegram</li>
-  <li>There should be an new entry in the JSON on the URL you opened from (5)</li>
-  <li>Copy the chat ID from the JSON (result::[X]::message::chat::id) and paste it into <i>telegram_chat_id<sup>2</sup</i></li>
+  <li>Set <i>telegram_notification_enabled<sup>2</sup></i> to <b>True</b>.</li>
+  <li>Follow this <a href = "https://www.teleme.io/articles/create_your_own_telegram_bot?hl=en" title = "Creating telegram bot">guide</a> to create your telegram bot.</li>
+  <li>Copy the API Token generated and paste it into <i>telegram_bot_token<sup>2</sup></i>.</li>
+  <li>Send your bot \start on Telegram.</li>
+  <li>Visit this URL: https://api.telegram.org/botBOT_TOKEN/getUpdates, replacing <i>BOT_TOKEN</i> with your API Token from (3).</li>
+  <li>Send a test message to your bot on Telegram.</li>
+  <li>There should be an new entry in the JSON on the URL you opened from (5).</li>
+  <li>Copy the chat ID from the JSON (result::[X]::message::chat::id) and paste it into <i>telegram_chat_id<sup>2</sup</i>.</li>
 </ol>
 
 <p><sup>1</sup> - <i>mail_config</i> in <a href="#config-yaml">config.yaml</a></p>
