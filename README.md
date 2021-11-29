@@ -55,7 +55,7 @@
   <li>Visit this URL: https://api.telegram.org/botBOT_TOKEN/getUpdates, replacing <i>BOT_TOKEN</i> with your API Token from (3).</li>
   <li>Send a test message to your bot on Telegram.</li>
   <li>There should be an new entry in the JSON on the URL you opened from (5).</li>
-  <li>Copy the chat ID from the JSON (result::[X]::message::chat::id) and paste it into <i>telegram_chat_id<sup>2</sup</i>.</li>
+  <li>Copy the chat ID from the JSON (result::[X]::message::chat::id) and paste it into <i>telegram_chat_id<sup>2</sup></i>.</li>
 </ol>
 
 <p><sup>1</sup> - <i>mail_config</i> in <a href="#config-yaml">config.yaml</a></p>
@@ -85,12 +85,12 @@ $ python setup.py --intepreter_keyword "python"
 <h3 id="manual-steps">3B) Manually</h3>
 
 <ol>
-  <li>Create a virtual environment, <a href="https://docs.python.org/3/library/venv.html" title="Python venv">venv</a>, for your project</li>
+  <li>Create a virtual environment, <a href="https://docs.python.org/3/library/venv.html" title="Python venv">venv</a>, for your project.</li>
   <li>Install dependencies:</li>
   
   ```$ path/to/project/venv/.../python -m pip install -r "requirements.txt"```
 
-  <li>Create <a href="#config-yaml">config.yaml</a> file</li>
+  <li>Create <a href="#config-yaml">config.yaml</a> file.</li>
 </ol> 
 
 <h1>Running</h1>
