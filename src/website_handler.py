@@ -149,18 +149,18 @@ class handler(CDCAbstract):
         return True
     
     def check_access_rights(self, webpage:str):
-        if "8080" not in self.driver.current_url:
-            self.log.info("User has been timed out! Now logging out and in again...")
-            self.account_logout()
-            self.account_login()
-            self._open_index(webpage, sleep_delay=1)
-            self.driver.refresh()
-            time.sleep(0.5)
-        
         if "Alert.aspx" in self.driver.current_url:
             self.log.info(f"You do not have access to {webpage}.")
             return False
         return True
+    
+    def check_logged_in(self):
+        self._open_index("/NewPortal/Booking/StatementBooking.aspx")
+        if "8080" not in self.driver.current_url:
+            self.log.info("User has been timed out! Now logging out and in again...")
+            self.account_logout()
+            self.account_login()
+            time.sleep(0.5)
     
     def dismiss_normal_captcha(self, caller_identifier:str, solve_captcha:bool=False, secondary_alert_timeout:int=5, force_enabled:bool=False):
         is_captcha_present = selenium_common.is_elem_present(self.driver, By.ID, "ctl00_ContentPlaceHolder1_CaptchaImg", timeout=5)
@@ -261,11 +261,9 @@ class handler(CDCAbstract):
         self.logged_in = False
         
     def open_booking_overview(self):
-        self._open_index("NewPortal/Booking/Dashboard.aspx") #"NewPortal/Booking/StatementBooking.aspx"
+        self.check_logged_in()
+        self._open_index("NewPortal/Booking/Dashboard.aspx") #"NewPortal/Booking/StatementBooking.aspx"        
         selenium_common.dismiss_alert(driver=self.driver, timeout=5)   
-        
-        if self.check_access_rights("NewPortal/Booking/Dashboard.aspx"):
-            selenium_common.dismiss_alert(driver=self.driver, timeout=5)   
         
     def get_reserved_lesson_date_time(self):
         rows = self.driver.find_elements(By.CSS_SELECTOR, "table#ctl00_ContentPlaceHolder1_gvReserved tr")
