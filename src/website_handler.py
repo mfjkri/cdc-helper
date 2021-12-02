@@ -262,6 +262,7 @@ class handler(CDCAbstract):
         
     def open_booking_overview(self):
         self._open_index("NewPortal/Booking/Dashboard.aspx") #"NewPortal/Booking/StatementBooking.aspx"
+        selenium_common.dismiss_alert(driver=self.driver, timeout=5)   
         
         if self.check_access_rights("NewPortal/Booking/Dashboard.aspx"):
             selenium_common.dismiss_alert(driver=self.driver, timeout=5)   
