@@ -231,7 +231,7 @@ class handler(CDCAbstract):
     def account_login(self):
         self.open_home_page(sleep_delay=2)
         
-        prompt_login_btn = selenium_common.wait_for_elem(self.driver, By.XPATH, "//*[@id=\"top-menu\"]/ul/li[10]/a")
+        prompt_login_btn = selenium_common.wait_for_elem(self.driver, By.XPATH, "//*[@id=\"top-menu\"]/ul/li[11]/a")
         prompt_login_btn.click()
         
         learner_id_input = selenium_common.wait_for_elem(self.driver, By.NAME, "userId")
