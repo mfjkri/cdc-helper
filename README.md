@@ -1,5 +1,7 @@
 <h1>CDC-HELPER</h1>
 
+<p>Inspiration from <a href="https://github.com/SilverJan/cdc-camper">cdc-camper</a> by <a href="https://github.com/SilverJan">SilverJan</a>.<p>
+
 <h1>Features:</h1>
 <ul>
   <li>Fetch available dates for E-Trial, BTT, RTT, Practical Lesson, PT</li>
