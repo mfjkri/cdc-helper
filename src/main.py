@@ -12,7 +12,6 @@ from src.utils.notifications.notification_manager import NotificationManager
 
 
 if __name__ == "__main__":
-    #captcha_solver = CaptchaBypass(log=log, is_enabled=True) 
     config = utils.load_config_from_yaml_file(file_path="config.yaml")
     program_config = config["program_config"]
 
