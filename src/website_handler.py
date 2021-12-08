@@ -1,4 +1,4 @@
-import sys, os, time, datetime
+import sys, os, time, datetime, re
 from typing import Dict, List, Union
 
 from selenium import webdriver
@@ -28,7 +28,8 @@ class handler(CDCAbstract):
             raise Exception("Invalid BROWSER_TYPE")
 
         self.home_url = "https://www.cdc.com.sg"
-        self.booking_url = "https://www.cdc.com.sg:8080"
+        self.booking_url = "https://www.cdc.com.sg:"
+        self.port = ""
         
         self.captcha_solver = captcha_solver
         self.log = log
@@ -83,8 +84,7 @@ class handler(CDCAbstract):
         pass #self.driver.close()
         
     def _open_index(self, path: str, sleep_delay = None):
-        self.driver.get(f"{self.booking_url}/{path}")
-
+        self.driver.get(f"{self.booking_url}{self.port}/{path}")
         if sleep_delay:
             time.sleep(sleep_delay)
             
@@ -155,8 +155,8 @@ class handler(CDCAbstract):
         return True
     
     def check_logged_in(self):
-        self._open_index("/NewPortal/Booking/StatementBooking.aspx")
-        if "8080" not in self.driver.current_url:
+        self._open_index("NewPortal/Booking/StatementBooking.aspx")
+        if self.port not in self.driver.current_url:
             self.log.info("User has been timed out! Now logging out and in again...")
             self.account_logout()
             self.account_login()
@@ -252,8 +252,15 @@ class handler(CDCAbstract):
                 time.sleep(1)
                 return self.account_login()
             else:
-                self.logged_in = True
-                return True
+                url_digits = re.findall(r'\d+', self.driver.current_url)
+                if len(url_digits) > 0:
+                    self.port = str(url_digits[-1])
+                    self.logged_in = True
+                    return True
+                else:
+                    self.account_logout()
+                    time.sleep(1)
+                    return self.account_login()
         
     def account_logout(self):
         self._open_index("NewPortal/logOut.aspx?PageName=Logout")
