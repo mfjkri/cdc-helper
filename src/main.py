@@ -57,7 +57,15 @@ if __name__ == "__main__":
             if program_config["refresh_rate"] > 0:
                 sleep_time = program_config["refresh_rate"]
                 cdc_handler.log.info(f"Program now sleeping for {datetime.timedelta(seconds=sleep_time)}...")
-                time.sleep(program_config["refresh_rate"])
+                
+                if sleep_time > 60:
+                    for i in range(int(sleep_time / 60)):
+                        cdc_handler.check_logged_in()
+                        time.sleep(60)
+                    time.sleep(sleep_time % 60)
+                else:
+                    time.sleep(sleep_time)
+                
                 cdc_handler.log.info(f"Program now resuming! Cached log in ?: {cdc_handler.logged_in}")
             else:
                 break
