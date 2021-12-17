@@ -4,7 +4,7 @@
 
 <h1>Features:</h1>
 <ul>
-  <li>Fetch available dates for E-Trial, BTT, RTT, Practical Lesson, PT</li>
+  <li>Fetch available dates for BTT, RTT, FTT, Practical Lesson, PT and more</li>
   <li>Compare with booked dates for each</li>
   <li>Notify user (via Telegram & E-mail) if earlier date is found</li>
   <li>Attempt and reserve the slot if possible</li>
