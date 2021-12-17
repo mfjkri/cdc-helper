@@ -107,19 +107,17 @@ if __name__ == "__main__":
 
                     "  slots_per_type:      # How many slots to try and reserve per type\n",
                     "    practical : 6\n",
-                    "    ett       : 1\n",
                     "    btt       : 1\n",
                     "    rtt       : 1\n",
-                    "    pt        : 1\n",
-                    "    rr        : 1\n\n",
+                    "    ftt       : 1\n",
+                    "    pt        : 1\n\n",
 
                     "  monitored_types:     # Toggle these values for which types you want the bot to be checking for.\n",
                     "    practical : False\n",
-                    "    ett       : True\n",
                     "    btt       : True\n",
                     "    rtt       : False\n",
-                    "    pt        : False\n",
-                    "    rr        : False\n\n",
+                    "    ftt       : True\n",
+                    "    pt        : False\n\n",
 
                     "browser_config:\n",
                     "  type: firefox        # Uses firefox driver as default (other option is chrome if you have its binaries).\n",

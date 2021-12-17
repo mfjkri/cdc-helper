@@ -156,19 +156,17 @@ program_config:
 
   slots_per_type:      # How many slots to try and reserve per type
     practical : 6
-    ett       : 1
     btt       : 1
     rtt       : 1
+    ftt       : 1
     pt        : 1
-    rr        : 1
 
   monitored_types:     # Toggle these values for which types you want the bot to be checking for.
     practical : False
-    ett       : True
-    btt       : True
+    btt       : False
     rtt       : False
+    ftt       : False
     pt        : False
-    rr        : False
 
 browser_config:
   type: firefox        # Uses firefox driver as default (other option is chrome if you have its binaries).

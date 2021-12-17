@@ -18,10 +18,9 @@ attribute_templates = [
 class Types:
     SIMULATOR = "simulator"
     PRACTICAL = "practical"
-    ROAD_REVISION = "rr"
-    ETT = "ett"
     BTT = "btt"
     RTT = "rtt"
+    FTT = "ftt"
     PT = "pt"
     
 field_types = [attr for attr in dir(Types) if not callable(getattr(Types, attr)) and not attr.startswith("__")]

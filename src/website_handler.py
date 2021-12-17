@@ -3,7 +3,7 @@ from typing import Dict, List, Union
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support import expected_conditions as EC, select
 from selenium.webdriver.support.ui import Select, WebDriverWait
 
 from abstracts.cdc_abstract import CDCAbstract, Types
@@ -50,9 +50,9 @@ class handler(CDCAbstract):
         self.platform = "linux" if "linux" in sys.platform else "windows" if "win32" in sys.platform else "osx"
         
         self.opening_booking_page_callback_map = {
-            Types.ETT : self.open_etrial_test_booking_page,
             Types.BTT : self.open_theory_test_booking_page,
             Types.RTT : self.open_theory_test_booking_page,
+            Types.FTT : self.open_theory_test_booking_page,
             Types.PRACTICAL : self.open_practical_lessons_booking_page,
             Types.SIMULATOR : self.open_simulator_lessons_booking_page,
             Types.PT : self.open_practical_test_booking_page,
@@ -193,11 +193,11 @@ class handler(CDCAbstract):
             terms_checkbox.click()
             agree_btn.click()
             
-    def get_course_data(self):
-        course_selection = Select(self.driver.find_element(By.ID, "ctl00_ContentPlaceHolder1_ddlCourse"))
+    def get_course_data(self, course_element_id:Union[str,None]=None):
+        course_selection = Select(self.driver.find_element(By.ID, course_element_id or "ctl00_ContentPlaceHolder1_ddlCourse"))
         number_of_options = len(course_selection.options)
         
-        course_data = {"course_selection" :course_selection, "available_courses" : []}
+        course_data = {"course_selection" : course_selection, "available_courses" : []}
         
         for option_index in range(0, number_of_options):
             option = course_selection.options[option_index]
@@ -214,7 +214,7 @@ class handler(CDCAbstract):
         return False
             
     def select_course_from_idx(self, course_data:Dict, course_idx:str):
-        if course_idx > 0 or course_idx < len(course_data["available_courses"]):
+        if course_idx < 0 or course_idx > len(course_data["available_courses"]):
             self.log.error(f"Course selected is out of range. {course_data['available_courses']}")
             return False
         
@@ -282,9 +282,9 @@ class handler(CDCAbstract):
                 
                 field_type = (
                     Types.PRACTICAL if "2BL" in lesson_name else
-                    Types.ETT if "E-TRIAL" in lesson_name else
                     Types.BTT if "BTT" in lesson_name else
                     Types.RTT if "RTT" in lesson_name else
+                    Types.FTT if "FTT" in lesson_name else
                     Types.PT if "PT" in lesson_name else
                     None
                 )
@@ -320,9 +320,9 @@ class handler(CDCAbstract):
                 
                 field_type = (
                     Types.PRACTICAL if "2BL" in lesson_name else
-                    Types.ETT if "E-TRIAL" in lesson_name else
                     Types.BTT if "BTT" in lesson_name else
                     Types.RTT if "RTT" in lesson_name else
+                    Types.FTT if "FTT" in lesson_name else
                     Types.PT if "PT" in lesson_name else
                     None
                 )
@@ -340,21 +340,6 @@ class handler(CDCAbstract):
     def open_field_type_booking_page(self, field_type:str):
         return self.opening_booking_page_callback_map[field_type](field_type)
 
-    def open_etrial_test_booking_page(self, field_type:str, call_depth:int=0):
-        if not self.check_call_depth(call_depth):
-            call_depth = 0
-        self._open_index("NewPortal/Booking/BookingETrial.aspx", sleep_delay=1)
-
-        if self.check_access_rights("NewPortal/Booking/BookingETrial.aspx"):
-            course_data = self.get_course_data()
-            if self.select_course_from_name(course_data, "E-Trial Test"):
-                if self.dismiss_normal_captcha(caller_identifier="E-Trial Test Booking", solve_captcha=True, secondary_alert_timeout=1):
-                    time.sleep(0.5)
-                    return True
-                else:
-                    return self.open_etrial_test_booking_page(field_type, call_depth+1)
-        return False 
-        
     def open_theory_test_booking_page(self, field_type:str, call_depth:int=0):
         if not self.check_call_depth(call_depth):
             call_depth = 0
@@ -366,7 +351,12 @@ class handler(CDCAbstract):
                 self.accept_terms_and_conditions()
                 
                 test_name_element = selenium_common.wait_for_elem(self.driver, By.ID, "ctl00_ContentPlaceHolder1_lblResAsmBlyDesc")
-                return (field_type == Types.BTT and "Basic Theory Test" in test_name_element.text) or (field_type == Types.RTT and "Riding Theory Test" in test_name_element.text) 
+                test_name = test_name_element.text
+                return (
+                        (field_type == Types.BTT and "Basic Theory Test" in test_name) 
+                        or (field_type == Types.RTT and "Riding Theory Test" in test_name) 
+                        or (field_type == Types.FTT and "Final Theory Test" in test_name)
+                )
             else:
                 return self.open_theory_test_booking_page(field_type, call_depth+1)
         else:
@@ -384,6 +374,26 @@ class handler(CDCAbstract):
                 if self.dismiss_normal_captcha(caller_identifier="Practical Lessons Booking", solve_captcha=True):
                     time.sleep(0.5)
                     WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.ID, 'ctl00_ContentPlaceHolder1_lblSessionNo')))
+                    
+                    other_teams_lessons = selenium_common.is_elem_present(self.driver, By.ID, "ctl00_ContentPlaceHolder1_ddlOthTeamID", timeout=2)
+                    if other_teams_lessons: 
+                        available_teams = self.get_course_data("ctl00_ContentPlaceHolder1_ddlOthTeamID")
+                        
+                        if len(available_teams["available_courses"]) > 1:
+                            self.get_all_session_date_times(Types.PRACTICAL)
+                            self.get_all_available_sessions(Types.PRACTICAL)
+                            
+                            for idx in range(1, len(available_teams["available_courses"])):
+                                selected_team = self.select_course_from_idx(available_teams, idx)
+                                time.sleep(1)
+
+                                loading_element = selenium_common.wait_for_elem(self.driver, By.ID, "ctl00_ContentPlaceHolder1_UpdateProgress1")
+                                while loading_element.is_displayed():
+                                    time.sleep(0.5)
+                                    
+                                self.get_all_session_date_times(Types.PRACTICAL)
+                                self.get_all_available_sessions(Types.PRACTICAL)
+
                     return True
                 else:
                     return self.open_practical_lessons_booking_page(field_type, call_depth+1)
@@ -424,11 +434,16 @@ class handler(CDCAbstract):
             for i, th_cell in enumerate(th_cells):
                 if i < 2:
                     continue
-                selected_times_array.append(str(th_cell.text).split("\n")[1])
+
+                selected_time_str = str(th_cell.text).split("\n")[1]
+                if selected_time_str not in selected_times_array:
+                    selected_times_array.append(selected_time_str)
 
             td_cells = row.find_elements(By.TAG_NAME, "td")
             if len(td_cells) > 0:
-                selected_days_array.append(td_cells[0].text)
+                selected_day_str = td_cells[0].text
+                if selected_day_str not in selected_days_array:
+                    selected_days_array.append(selected_day_str)
     
     def get_all_available_sessions(self, field_type:str):
         input_elements = self.driver.find_elements(By.TAG_NAME, "input")
@@ -445,17 +460,23 @@ class handler(CDCAbstract):
                 # e.g. ctl00_ContentPlaceHolder1_gvLatestav_ctl02_btnSession4 (02 is row, 4 is column)
                 element_id = str(input_element.get_attribute("id"))
                 element_id_spliced = element_id.split('_')
-                
-                row = int(element_id_spliced[3][-2:]) - 2
+                #row = int(element_id_spliced[3][-2:]) - 2
                 column = int(element_id_spliced[-1][10:]) - 1 
                 
-                days_in_view = self.get_attribute_with_fieldtype("days_in_view", field_type)
-                times_in_view = self.get_attribute_with_fieldtype("times_in_view", field_type)   
-                web_elements_in_view = self.get_attribute_with_fieldtype("web_elements_in_view", field_type)
+                parent_table = input_element.find_element(By.XPATH, "../../..")
+                parent_row = input_element.find_element(By.XPATH, "../..")
+                td_cells = parent_row.find_elements(By.TAG_NAME, "td")
                 
-                available_session_date = days_in_view[row]
-                available_session_time = times_in_view[column]
-                web_elements_in_view.update({f"{available_session_date} : {available_session_time}" : element_id})
+                tr_rows = parent_table.find_elements(By.TAG_NAME, "tr")
+                th_cells = tr_rows[0].find_elements(By.TAG_NAME, "th")
+                
+                available_session_date = td_cells[0].text
+                available_session_time = str(th_cells[column + 2].text).split("\n")[1]
+                
+                web_elements_in_view = self.get_attribute_with_fieldtype("web_elements_in_view", field_type)                
+                web_element_key = f"{available_session_date} : {available_session_time}"
+                if web_element_key not in web_elements_in_view:
+                    web_elements_in_view.update({web_element_key : element_id})
 
                 if "Images1.gif" in input_element_src:
                     available_sessions = self.get_attribute_with_fieldtype("available_sessions", field_type)
@@ -467,7 +488,8 @@ class handler(CDCAbstract):
                     if available_session_date not in available_sessions:
                         available_sessions.update({available_session_date: [available_session_time]})
                     else:
-                        available_sessions[available_session_date].append(available_session_time)
+                        if available_session_time not in available_sessions[available_session_date]:
+                            available_sessions[available_session_date].append(available_session_time)
                 elif "Images2.gif" in input_element_src:
                     pass
                 elif "Images3.gif" in input_element_src:
@@ -654,7 +676,7 @@ class handler(CDCAbstract):
                 
                 if number_of_slots_needed > 0:
                     self.log.info(f"Number of slots to reserve for {field_type.upper()} is: {number_of_slots_needed}")
-                    insufficient_funds = False
+                    conditions_not_met = False
                     earliest_sessions_to_be_reserved = self.get_earliest_time_slots(earlier_sessions, number_of_slots_needed)
                     
                     for date_str, time_slots in earliest_sessions_to_be_reserved.items():
@@ -665,10 +687,13 @@ class handler(CDCAbstract):
                             self.log.info(f"Attempting to reserve a {field_type.upper()} slot on {date_str} : {time_slot}.")
 
                             alert_found, alert_text = selenium_common.dismiss_alert(self.driver, timeout=10)
+                            if alert_found and "non-computerised" in alert_text:
+                                alert_found, alert_text = selenium_common.dismiss_alert(self.driver, timeout=10)
+                                
                             if alert_found:
                                 self.log.error(f"Failed to reserve a {field_type.upper()} slot on {date_str} : {time_slot}. Reason: {alert_text}")
-                                if "Store Value:" in alert_text:
-                                    insufficient_funds = True
+                                if "Store Value:" in alert_text or "before" in alert_text:
+                                    conditions_not_met = True
                                     break
                             else:
                                 if date_str not in reserved_sessions:
@@ -680,7 +705,7 @@ class handler(CDCAbstract):
                                 if len(available_sessions[date_str]) == 0:
                                     del available_sessions[date_str]
                         
-                        if insufficient_funds:
+                        if conditions_not_met:
                             break
             
             self.set_attribute_with_fieldtype("reserved_sessions", field_type, dict(reserved_sessions))
