@@ -282,6 +282,7 @@ class handler(CDCAbstract):
                 
                 field_type = (
                     Types.PRACTICAL if "2BL" in lesson_name else
+                    Types.PRACTICAL if "ONETEAM" in lesson_name else
                     Types.BTT if "BTT" in lesson_name else
                     Types.RTT if "RTT" in lesson_name else
                     Types.FTT if "FTT" in lesson_name else
@@ -302,17 +303,6 @@ class handler(CDCAbstract):
     def get_booked_lesson_date_time(self):
         rows = self.driver.find_elements(By.CSS_SELECTOR, "table#ctl00_ContentPlaceHolder1_gvBooked tr")
 
-        # Check which practical lesson is the latest (in case there are e.g. lesson 5 and 6 bookings)
-        latest_booked_practical_lesson_number = 0
-        for row in rows:
-            td_cells = row.find_elements(By.TAG_NAME, "td")
-            if len(td_cells) > 0:
-                lesson_name = td_cells[4].text
-                if "2BL" in lesson_name:
-                    lesson_number = int(lesson_name[len(lesson_name) - 1])
-                    if lesson_number > latest_booked_practical_lesson_number:
-                        latest_booked_practical_lesson_number = lesson_number
-
         for row in rows:
             td_cells = row.find_elements(By.TAG_NAME, "td")
             if len(td_cells) > 0:
@@ -320,6 +310,7 @@ class handler(CDCAbstract):
                 
                 field_type = (
                     Types.PRACTICAL if "2BL" in lesson_name else
+                    Types.PRACTICAL if "ONETEAM" in lesson_name else
                     Types.BTT if "BTT" in lesson_name else
                     Types.RTT if "RTT" in lesson_name else
                     Types.FTT if "FTT" in lesson_name else
@@ -328,14 +319,13 @@ class handler(CDCAbstract):
                 )
                 
                 if field_type:
-                    if field_type != Types.PRACTICAL or (field_type == Types.PRACTICAL and lesson_name[len(lesson_name) - 1] == str(latest_booked_practical_lesson_number)):
-                        self.set_attribute_with_fieldtype("lesson_name", field_type, lesson_name)
-                        booked_sessions = self.get_attribute_with_fieldtype("booked_sessions", field_type)
-                        
-                        if td_cells[0].text not in booked_sessions:
-                            booked_sessions.update({td_cells[0].text: [f"{td_cells[2].text[:-3]} - {td_cells[3].text[:-3]}"]})
-                        else:
-                            booked_sessions[td_cells[0].text].append(f"{td_cells[2].text[:-3]} - {td_cells[3].text[:-3]}")
+                    self.set_attribute_with_fieldtype("lesson_name", field_type, lesson_name)
+                    booked_sessions = self.get_attribute_with_fieldtype("booked_sessions", field_type)
+                    
+                    if td_cells[0].text not in booked_sessions:
+                        booked_sessions.update({td_cells[0].text: [f"{td_cells[2].text[:-3]} - {td_cells[3].text[:-3]}"]})
+                    else:
+                        booked_sessions[td_cells[0].text].append(f"{td_cells[2].text[:-3]} - {td_cells[3].text[:-3]}")
         
     def open_field_type_booking_page(self, field_type:str):
         return self.opening_booking_page_callback_map[field_type](field_type)
