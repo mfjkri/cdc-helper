@@ -27,8 +27,8 @@ field_types = [attr for attr in dir(Types) if not callable(getattr(Types, attr))
 
 class CDCAbstract:
     def __init__(self, username, password, headless=False):
-        self.username = username
-        self.password = password
+        # self.username = username
+        # self.password = password
         self.headless = headless
         
         for field_type in field_types:
