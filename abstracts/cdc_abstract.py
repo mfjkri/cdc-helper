@@ -27,8 +27,8 @@ field_types = [attr for attr in dir(Types) if not callable(getattr(Types, attr))
 
 class CDCAbstract:
     def __init__(self, username, password, headless=False):
-        # self.username = username
-        # self.password = password
+        self.username = username
+        self.password = password
         self.headless = headless
         
         for field_type in field_types:
@@ -53,8 +53,8 @@ class CDCAbstract:
         abstract_str = "# ------------------------------------- - ------------------------------------ #\n"
         abstract_str += "CDC_ABSTRACT\n"
         
-        abstract_str += f"user = {str(self.username)}\n"
-        abstract_str += f"password = {str(self.password)}\n"
+        abstract_str += f"user = ######" #{str(self.username)}\n"
+        abstract_str += f"password = ######" #{str(self.password)}\n"
         abstract_str += f"headless = {str(self.headless)}\n"
 
         abstract_str += "\n"
