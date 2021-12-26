@@ -370,20 +370,40 @@ class handler(CDCAbstract):
                         available_teams = self.get_course_data("ctl00_ContentPlaceHolder1_ddlOthTeamID")
                         
                         if len(available_teams["available_courses"]) > 1:
-                            self.get_all_session_date_times(Types.PRACTICAL)
-                            self.get_all_available_sessions(Types.PRACTICAL)
-                            
-                            for idx in range(1, len(available_teams["available_courses"])):
-                                selected_team = self.select_course_from_idx(available_teams, idx)
-                                time.sleep(1)
-
-                                loading_element = selenium_common.wait_for_elem(self.driver, By.ID, "ctl00_ContentPlaceHolder1_UpdateProgress1")
-                                while loading_element.is_displayed():
-                                    time.sleep(0.5)
-                                    
+                            if self.program_config["book_from_other_teams"]:
                                 self.get_all_session_date_times(Types.PRACTICAL)
                                 self.get_all_available_sessions(Types.PRACTICAL)
 
+                                available_teams_str = ""
+                                
+                                for idx in range(1, len(available_teams["available_courses"])):
+                                    available_teams = self.get_course_data("ctl00_ContentPlaceHolder1_ddlOthTeamID")
+                                    if len(available_teams["available_courses"]) > idx:
+                                        selected_team = self.select_course_from_idx(available_teams, idx)
+                                        available_teams_str += "=======================\n"
+                                        available_teams_str += f"{selected_team} has slots:\n\n"
+                                        time.sleep(1)
+
+                                        loading_element = selenium_common.wait_for_elem(self.driver, By.ID, "ctl00_ContentPlaceHolder1_UpdateProgress1")
+                                        while loading_element.is_displayed():
+                                            time.sleep(0.5)
+
+                                        team_available_sessions = {}
+                                        self.get_all_available_sessions(Types.PRACTICAL, team_available_sessions)
+                                        
+                                        for available_date_str, available_time_slots in team_available_sessions.items():
+                                            available_teams_str += f"{available_date_str}:\n"
+                                            for time_slot in available_time_slots:
+                                                available_teams_str += f"  -> {time_slot}\n"
+                                        available_teams_str += "=======================\n"
+
+                                        self.get_all_session_date_times(Types.PRACTICAL)
+                                        self.get_all_available_sessions(Types.PRACTICAL)
+                                        
+                                self.notification_manager.send_notification_all(
+                                    title=f"SESSIONS FROM OTHER TEAMS DETECTED",
+                                    msg=available_teams_str
+                                ) 
                     return True
                 else:
                     return self.open_practical_lessons_booking_page(field_type, call_depth+1)
@@ -435,7 +455,7 @@ class handler(CDCAbstract):
                 if selected_day_str not in selected_days_array:
                     selected_days_array.append(selected_day_str)
     
-    def get_all_available_sessions(self, field_type:str):
+    def get_all_available_sessions(self, field_type:str, local_tb:Dict=None):
         input_elements = self.driver.find_elements(By.TAG_NAME, "input")
         last_practical_input_element = None
         has_booked_lessons = False
@@ -463,13 +483,13 @@ class handler(CDCAbstract):
                 available_session_date = td_cells[0].text
                 available_session_time = str(th_cells[column + 2].text).split("\n")[1]
                 
-                web_elements_in_view = self.get_attribute_with_fieldtype("web_elements_in_view", field_type)                
+                web_elements_in_view = {} if local_tb is not None else self.get_attribute_with_fieldtype("web_elements_in_view", field_type)                
                 web_element_key = f"{available_session_date} : {available_session_time}"
                 if web_element_key not in web_elements_in_view:
                     web_elements_in_view.update({web_element_key : element_id})
 
                 if "Images1.gif" in input_element_src:
-                    available_sessions = self.get_attribute_with_fieldtype("available_sessions", field_type)
+                    available_sessions = local_tb if local_tb is not None else self.get_attribute_with_fieldtype("available_sessions", field_type)
                     
                     last_practical_input_element = (
                         input_element if field_type == Types.PRACTICAL else last_practical_input_element

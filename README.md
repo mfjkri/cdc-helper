@@ -152,6 +152,7 @@ cdc_login_credentials:
 program_config:
   auto_reserve: True           # Whether to (try and) reserve earliest available slots. User must still log in to confirm these sessions.
   reserve_for_same_day: True   # Whether to consider slots on the same days as currently booked slots.
+  book_from_other_teams: True  # Whether to book from other OneTeams (User must be a OneTeam member)
   refresh_rate: 1800           # How long to wait between checks on the wesite (in seconds).
 
   slots_per_type:      # How many slots to try and reserve per type
