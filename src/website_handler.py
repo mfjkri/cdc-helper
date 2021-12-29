@@ -28,7 +28,7 @@ class handler(CDCAbstract):
             raise Exception("Invalid BROWSER_TYPE")
 
         self.home_url = "https://www.cdc.com.sg"
-        self.booking_url = "https://www.cdc.com.sg:"
+        self.booking_url = "https://bookingportal.cdc.com.sg:"
         self.port = ""
         
         self.captcha_solver = captcha_solver
