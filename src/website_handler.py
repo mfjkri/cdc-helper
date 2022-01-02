@@ -81,7 +81,7 @@ class handler(CDCAbstract):
         return self
     
     def __exit__(self, *args):
-        pass #self.driver.close()
+        pass self.driver.close()
         
     def _open_index(self, path: str, sleep_delay = None):
         self.driver.get(f"{self.booking_url}{self.port}/{path}")
