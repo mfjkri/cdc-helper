@@ -1,6 +1,22 @@
 <h1>CDC-HELPER</h1>
 
-<p>Inspiration from <a href="https://github.com/SilverJan/cdc-camper">cdc-camper</a> by <a href="https://github.com/SilverJan">SilverJan</a>.<p>
+&nbsp;
+
+---
+
+## ⚠️ THIS PROJECT IS NO LONGER BEING MAINTAINED. ⚠️
+
+### I am retiring this project and archiving it.
+
+### The major reason for it is that I have gotten my license and as such no longer have access to the CDC booking platform. I am also no longer interested/motivated to, as this project was only to aid me in getting my license earlier, so please do not contact me with hopes that I will update it.
+
+### Feel free to clone this project for your own use.
+
+---
+
+&nbsp;
+
+<p>Inspired by <a href="https://github.com/SilverJan/cdc-camper">cdc-camper</a> by <a href="https://github.com/SilverJan">SilverJan</a>.<p>
 
 <h1>Features:</h1>
 <ul>
@@ -8,14 +24,13 @@
   <li>Compare with booked dates for each</li>
   <li>Notify user (via Telegram & E-mail) if earlier date is found</li>
   <li>Attempt and reserve the slot if possible</li>
-</ul> 
+</ul>
 
 <h1>Prerequisites</h1>
 
 <h2>Python 3</h2>
 
 <p>If you do not already have Python3 install it from the official website [here](https://www.python.org/downloads).</p>
-  
 
 <h2>Setting Up</h2>
 
@@ -65,8 +80,7 @@
 
 <hr>
 <h3>3A) Using <a href="https://github.com/mfjkri/cdc-helper/blob/master/setup.py" title="setup.py">setup.py</a>:</h3>
-<p></p> 
-
+<p></p>
 
 <h4><b>For Windows & Linux:</b></h4>
 
@@ -82,7 +96,6 @@ $ python setup.py --intepreter_keyword "python"
 
 <p>This project isn't guaranteed to work on other operating systems. You can try building the project by following the <a href="#manual-steps">manual steps (3B)</a>.</p>
 
-
 <hr>
 <h3 id="manual-steps">3B) Manually</h3>
 
@@ -93,13 +106,14 @@ $ python setup.py --intepreter_keyword "python"
   ```$ path/to/project/venv/.../python -m pip install -r "requirements.txt"```
 
   <li>Create <a href="#config-yaml">config.yaml</a> file.</li>
-</ol> 
+</ol>
 
 <h1>Running</h1>
 
 ```
 $ path/to/project/venv/.../python src/main.py
 ```
+
 <p>OR, if you have <a href="https://github.com/mfjkri/cdc-helper/blob/master/src/main.py">main.py</a> set to be an execeutable with a valid shebang:<p>
 
 ```
@@ -114,7 +128,7 @@ $ src/main.py
 ```
 # ---------------------------- TWO-CAPTCHA CONFIG ---------------------------- #
 two_captcha_config:    # This program uses the 2captcha API to solve captchas on the website. See README.md for more info.
-  api_key: !KEY_HERE! 
+  api_key: !KEY_HERE!
   enabled: True
   debug_mode: True
 # ------------------------------------- - ------------------------------------ #
@@ -183,4 +197,3 @@ log_config:
   clear_logs_init: False            # Whether to delete old log files before at the start of every execution
   appends_stack_call_to_log : False # Whether to display stack_info in log
 ```
-
